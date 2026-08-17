@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific files
+xcuserdata/
+*.xcuserstate
+
+# Build products
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Xcode playground
+timeline.xctimeline
+playground.xcworkspace
+
+# Temporary files
+*.tmp
+*.swp
+*~

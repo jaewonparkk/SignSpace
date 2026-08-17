@@ -6,14 +6,26 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DE819FE810F884B52E10B5AD /* Pods_SignSpace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SignSpace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.debug.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.debug.xcconfig"; sourceTree = "<group>"; };
 		5313B2963033AC3C008B6A96 /* SignSpace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignSpace.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.release.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5313B2983033AC3C008B6A96 /* SignSpace */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SignSpace;
+			sourceTree = "<group>";
+		};
+		53153E4C3033CD9000595135 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -23,17 +35,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE819FE810F884B52E10B5AD /* Pods_SignSpace.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		166FC83FA5741326CAA2304B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		5313B28D3033AC3C008B6A96 = {
 			isa = PBXGroup;
 			children = (
+				53153E4C3033CD9000595135 /* Resources */,
 				5313B2983033AC3C008B6A96 /* SignSpace */,
 				5313B2973033AC3C008B6A96 /* Products */,
+				E93EC08FC79666FD5D368273 /* Pods */,
+				166FC83FA5741326CAA2304B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -45,6 +69,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E93EC08FC79666FD5D368273 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */,
+				BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -52,6 +85,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5313B2A13033AC3E008B6A96 /* Build configuration list for PBXNativeTarget "SignSpace" */;
 			buildPhases = (
+				058D2709C78FC9BD04DC59D1 /* [CP] Check Pods Manifest.lock */,
 				5313B2923033AC3C008B6A96 /* Sources */,
 				5313B2933033AC3C008B6A96 /* Frameworks */,
 				5313B2943033AC3C008B6A96 /* Resources */,
@@ -62,10 +96,9 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5313B2983033AC3C008B6A96 /* SignSpace */,
+				53153E4C3033CD9000595135 /* Resources */,
 			);
 			name = SignSpace;
-			packageProductDependencies = (
-			);
 			productName = SignSpace;
 			productReference = 5313B2963033AC3C008B6A96 /* SignSpace.app */;
 			productType = "com.apple.product-type.application";
@@ -113,6 +146,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		058D2709C78FC9BD04DC59D1 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-SignSpace-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5313B2923033AC3C008B6A96 /* Sources */ = {
@@ -248,6 +306,7 @@
 		};
 		5313B2A23033AC3E008B6A96 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -256,6 +315,7 @@
 				DEVELOPMENT_TEAM = P4Z32Y347P;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SignSpace uses the camera to capture and analyze sign language hand movements.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -280,6 +340,7 @@
 		};
 		5313B2A33033AC3E008B6A96 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -288,6 +349,7 @@
 				DEVELOPMENT_TEAM = P4Z32Y347P;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SignSpace uses the camera to capture and analyze sign language hand movements.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
