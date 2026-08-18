@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DE819FE810F884B52E10B5AD /* Pods_SignSpace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */; };
+		6A9D9A14FD0BB853DDE0C809 /* Pods_SignSpace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CA5191F25B58B70A34CC3AC /* Pods_SignSpace.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SignSpace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.debug.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.debug.xcconfig"; sourceTree = "<group>"; };
+		1F9FEC7640F73109212D53A4 /* Pods-SignSpace.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.release.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.release.xcconfig"; sourceTree = "<group>"; };
+		3CA5191F25B58B70A34CC3AC /* Pods_SignSpace.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SignSpace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5313B2963033AC3C008B6A96 /* SignSpace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignSpace.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.release.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.release.xcconfig"; sourceTree = "<group>"; };
+		55C0AFA6EA5DC9B4A4D61DC8 /* Pods-SignSpace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SignSpace.debug.xcconfig"; path = "Target Support Files/Pods-SignSpace/Pods-SignSpace.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -35,21 +35,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DE819FE810F884B52E10B5AD /* Pods_SignSpace.framework in Frameworks */,
+				6A9D9A14FD0BB853DDE0C809 /* Pods_SignSpace.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		166FC83FA5741326CAA2304B /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				114DFA9CDE287F5A4626F42E /* Pods_SignSpace.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		5313B28D3033AC3C008B6A96 = {
 			isa = PBXGroup;
 			children = (
@@ -57,7 +49,7 @@
 				5313B2983033AC3C008B6A96 /* SignSpace */,
 				5313B2973033AC3C008B6A96 /* Products */,
 				E93EC08FC79666FD5D368273 /* Pods */,
-				166FC83FA5741326CAA2304B /* Frameworks */,
+				61E5E9B3746BC4478106FBE0 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -69,11 +61,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		61E5E9B3746BC4478106FBE0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3CA5191F25B58B70A34CC3AC /* Pods_SignSpace.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E93EC08FC79666FD5D368273 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */,
-				BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */,
+				55C0AFA6EA5DC9B4A4D61DC8 /* Pods-SignSpace.debug.xcconfig */,
+				1F9FEC7640F73109212D53A4 /* Pods-SignSpace.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -85,7 +85,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5313B2A13033AC3E008B6A96 /* Build configuration list for PBXNativeTarget "SignSpace" */;
 			buildPhases = (
-				058D2709C78FC9BD04DC59D1 /* [CP] Check Pods Manifest.lock */,
+				192C1D00D909017FA39507A4 /* [CP] Check Pods Manifest.lock */,
 				5313B2923033AC3C008B6A96 /* Sources */,
 				5313B2933033AC3C008B6A96 /* Frameworks */,
 				5313B2943033AC3C008B6A96 /* Resources */,
@@ -148,7 +148,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		058D2709C78FC9BD04DC59D1 /* [CP] Check Pods Manifest.lock */ = {
+		192C1D00D909017FA39507A4 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -306,7 +306,7 @@
 		};
 		5313B2A23033AC3E008B6A96 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2E91A7CE9C42CBCF23BAFE53 /* Pods-SignSpace.debug.xcconfig */;
+			baseConfigurationReference = 55C0AFA6EA5DC9B4A4D61DC8 /* Pods-SignSpace.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -340,7 +340,7 @@
 		};
 		5313B2A33033AC3E008B6A96 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BF125A64786D50B6948E80A3 /* Pods-SignSpace.release.xcconfig */;
+			baseConfigurationReference = 1F9FEC7640F73109212D53A4 /* Pods-SignSpace.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
