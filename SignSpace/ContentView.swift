@@ -18,170 +18,360 @@ struct ContentView: View {
             .ignoresSafeArea()
 
 
-            VStack(
-                alignment: .leading,
-                spacing: 20
-            ) {
-
-                // MARK: Header
+            ScrollView {
 
                 VStack(
                     alignment: .leading,
-                    spacing: 6
+                    spacing: 20
                 ) {
 
-                    Text("SignSpace")
-                        .font(
-                            .system(
-                                size: 34,
-                                weight: .bold,
-                                design: .rounded
-                            )
-                        )
-
-                    Text(
-                        "Capture movement, not just video."
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 24)
-
-
-                // MARK: Camera
-
-                ZStack {
-
-                    CameraPreview(
-                        session: handTracker.session,
-                        cameraDevice: handTracker.cameraDevice
-                    )
-
-                    HandLandmarkOverlay(
-                        hands: handTracker.handLandmarks
-                    )
-
-
-                    // MARK: Top Status
-
-                    VStack {
-
-                        HStack {
-
-                            Circle()
-                                .fill(
-                                    handTracker.handLandmarks.isEmpty
-                                    ? Color.orange
-                                    : Color.green
-                                )
-                                .frame(
-                                    width: 8,
-                                    height: 8
-                                )
-
-                            Text(
-                                handTracker.statusText
-                            )
-                            .font(
-                                .system(
-                                    size: 13,
-                                    weight: .semibold
-                                )
-                            )
-                            .foregroundStyle(.white)
-
-                            Spacer()
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(
-                            .black.opacity(0.45)
-                        )
-
-                        Spacer()
-                    }
-                }
-                .aspectRatio(
-                    3.0 / 4.0,
-                    contentMode: .fit
-                )
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 28,
-                        style: .continuous
-                    )
-                )
-                .padding(.horizontal, 20)
-
-
-                // MARK: Information
-
-                HStack(
-                    spacing: 12
-                ) {
-
-                    Image(
-                        systemName: "hand.raised.fill"
-                    )
-                    .font(.title2)
+                    // MARK: - Header
 
                     VStack(
                         alignment: .leading,
-                        spacing: 3
+                        spacing: 6
                     ) {
 
-                        Text(
-                            handTracker.handLandmarks.isEmpty
-                            ? "No hand detected"
-                            : "Tracking live"
-                        )
-                        .font(
-                            .headline
-                        )
+                        Text("SignSpace")
+                            .font(
+                                .system(
+                                    size: 34,
+                                    weight: .bold,
+                                    design: .rounded
+                                )
+                            )
 
                         Text(
-                            handTracker.handLandmarks.isEmpty
-                            ? "Hold one hand inside the camera frame."
-                            : "\(handTracker.handLandmarks.count) hand\(handTracker.handLandmarks.count == 1 ? "" : "s") detected."
+                            "Capture movement, not just video."
                         )
-                        .font(
-                            .subheadline
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 24)
+
+
+                    // MARK: - Camera
+
+                    ZStack {
+
+                        CameraPreview(
+                            session:
+                                handTracker.session,
+                            cameraDevice:
+                                handTracker.cameraDevice
                         )
+
+
+                        HandLandmarkOverlay(
+                            hands:
+                                handTracker.handLandmarks
+                        )
+
+
+                        // MARK: Status
+
+                        VStack {
+
+                            HStack(
+                                spacing: 8
+                            ) {
+
+                                Circle()
+                                    .fill(
+                                        handTracker.isRecording
+                                        ? Color.red
+                                        : handTracker.handLandmarks.isEmpty
+                                        ? Color.orange
+                                        : Color.green
+                                    )
+                                    .frame(
+                                        width: 8,
+                                        height: 8
+                                    )
+
+
+                                Text(
+                                    handTracker.statusText
+                                )
+                                .font(
+                                    .system(
+                                        size: 13,
+                                        weight: .semibold
+                                    )
+                                )
+                                .foregroundStyle(
+                                    .white
+                                )
+
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(
+                                .black.opacity(0.45)
+                            )
+
+
+                            Spacer()
+                        }
+                    }
+                    .aspectRatio(
+                        3.0 / 4.0,
+                        contentMode: .fit
+                    )
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 28,
+                            style: .continuous
+                        )
+                    )
+                    .padding(.horizontal, 20)
+
+
+                    // MARK: - Recording Button
+
+                    Button {
+
+                        if handTracker.isRecording {
+
+                            handTracker.stopRecording(
+                                name: "Test Sign"
+                            )
+
+                        } else {
+
+                            handTracker.startRecording()
+                        }
+
+                    } label: {
+
+                        HStack(
+                            spacing: 12
+                        ) {
+
+                            ZStack {
+
+                                Circle()
+                                    .stroke(
+                                        handTracker.isRecording
+                                        ? Color.white
+                                        : Color.red,
+                                        lineWidth: 3
+                                    )
+                                    .frame(
+                                        width: 28,
+                                        height: 28
+                                    )
+
+
+                                if handTracker.isRecording {
+
+                                    RoundedRectangle(
+                                        cornerRadius: 4
+                                    )
+                                    .fill(.white)
+                                    .frame(
+                                        width: 12,
+                                        height: 12
+                                    )
+
+                                } else {
+
+                                    Circle()
+                                        .fill(.red)
+                                        .frame(
+                                            width: 18,
+                                            height: 18
+                                        )
+                                }
+                            }
+
+
+                            Text(
+                                handTracker.isRecording
+                                ? "Stop Recording"
+                                : "Record Sign"
+                            )
+                            .font(
+                                .system(
+                                    size: 17,
+                                    weight: .semibold
+                                )
+                            )
+
+
+                            Spacer()
+
+
+                            if handTracker.isRecording {
+
+                                Text(
+                                    "\(handTracker.recordedFrameCount) frames"
+                                )
+                                .font(
+                                    .system(
+                                        size: 13,
+                                        weight: .medium
+                                    )
+                                )
+                                .foregroundStyle(
+                                    .white.opacity(0.8)
+                                )
+                            }
+                        }
                         .foregroundStyle(
-                            .secondary
+                            handTracker.isRecording
+                            ? Color.white
+                            : Color.primary
+                        )
+                        .padding(
+                            .horizontal,
+                            20
+                        )
+                        .frame(
+                            height: 64
+                        )
+                        .background(
+                            handTracker.isRecording
+                            ? Color.red
+                            : Color.white.opacity(0.8)
+                        )
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: 20,
+                                style: .continuous
+                            )
                         )
                     }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
 
-                    Spacer()
-                }
-                .padding(18)
-                .background(
-                    Color.white.opacity(0.7)
-                )
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 20,
-                        style: .continuous
+
+                    // MARK: - Latest Recording
+
+                    if let recording =
+                        handTracker.latestRecording {
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: 14
+                        ) {
+
+                            HStack {
+
+                                VStack(
+                                    alignment: .leading,
+                                    spacing: 4
+                                ) {
+
+                                    Text(
+                                        "Motion captured"
+                                    )
+                                    .font(
+                                        .headline
+                                    )
+
+                                    Text(
+                                        recording.name
+                                    )
+                                    .font(
+                                        .subheadline
+                                    )
+                                    .foregroundStyle(
+                                        .secondary
+                                    )
+                                }
+
+
+                                Spacer()
+
+
+                                Image(
+                                    systemName:
+                                        "checkmark.circle.fill"
+                                )
+                                .font(
+                                    .system(
+                                        size: 26
+                                    )
+                                )
+                                .foregroundStyle(
+                                    .green
+                                )
+                            }
+
+
+                            Divider()
+
+
+                            HStack {
+
+                                recordingStat(
+                                    title: "Frames",
+                                    value:
+                                        "\(recording.frameCount)"
+                                )
+
+
+                                Spacer()
+
+
+                                recordingStat(
+                                    title: "Duration",
+                                    value:
+                                        String(
+                                            format:
+                                                "%.2fs",
+                                            recording.durationSeconds
+                                        )
+                                )
+
+
+                                Spacer()
+
+
+                                recordingStat(
+                                    title: "3D",
+                                    value: "✓"
+                                )
+                            }
+                        }
+                        .padding(20)
+                        .background(
+                            Color.white.opacity(0.75)
+                        )
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: 22,
+                                style: .continuous
+                            )
+                        )
+                        .padding(.horizontal, 20)
+                    }
+
+
+                    // MARK: - Error
+
+                    if let error =
+                        handTracker.errorMessage {
+
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .padding(
+                                .horizontal,
+                                24
+                            )
+                    }
+
+
+                    Spacer(
+                        minLength: 30
                     )
-                )
-                .padding(.horizontal, 20)
-
-
-                // MARK: Error
-
-                if let error =
-                    handTracker.errorMessage {
-
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 24)
                 }
-
-
-                Spacer()
+                .padding(.top, 20)
             }
-            .padding(.top, 20)
         }
         .onAppear {
 
@@ -190,6 +380,39 @@ struct ContentView: View {
         .onDisappear {
 
             handTracker.stop()
+        }
+    }
+
+
+    // MARK: - Recording Stat
+
+    private func recordingStat(
+        title: String,
+        value: String
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 4
+        ) {
+
+            Text(title)
+                .font(
+                    .caption
+                )
+                .foregroundStyle(
+                    .secondary
+                )
+
+
+            Text(value)
+                .font(
+                    .system(
+                        size: 17,
+                        weight: .semibold,
+                        design: .rounded
+                    )
+                )
         }
     }
 }
