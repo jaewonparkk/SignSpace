@@ -9,8 +9,14 @@ final class HandTrackingService: NSObject, ObservableObject {
     // MARK: - Published UI State
 
     @Published var handLandmarks: [[CGPoint]] = []
-    @Published var statusText: String = "Starting..."
+
+    @Published var statusText: String =
+        "Starting..."
+
     @Published var errorMessage: String?
+
+    @Published private(set)
+    var cameraDevice: AVCaptureDevice?
 
 
     // MARK: - Camera
@@ -25,22 +31,32 @@ final class HandTrackingService: NSObject, ObservableObject {
         label: "com.signspace.camera.video"
     )
 
-    private var videoOutput: AVCaptureVideoDataOutput?
+    private var videoOutput:
+        AVCaptureVideoDataOutput?
 
     private var isCameraConfigured = false
 
 
+    // MARK: - Camera Rotation
+
+    private var captureRotationCoordinator:
+        AVCaptureDevice.RotationCoordinator?
+
+
     // MARK: - MediaPipe
 
-    private var handLandmarker: HandLandmarker?
+    private var handLandmarker:
+        HandLandmarker?
 
 
     // MARK: - Init
 
     override init() {
+
         super.init()
 
         configureHandLandmarker()
+
         requestCameraPermission()
     }
 
@@ -49,53 +65,72 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     private func configureHandLandmarker() {
 
-        guard let modelPath = Bundle.main.path(
-            forResource: "hand_landmarker",
-            ofType: "task"
-        ) else {
+        guard let modelPath =
+                Bundle.main.path(
+                    forResource: "hand_landmarker",
+                    ofType: "task"
+                ) else {
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "hand_landmarker.task was not found in the app bundle."
 
-                self.statusText = "Model missing"
+                self.statusText =
+                    "Model missing"
             }
 
             return
         }
 
-        let options = HandLandmarkerOptions()
 
-        options.baseOptions.modelAssetPath = modelPath
+        let options =
+            HandLandmarkerOptions()
 
-        options.runningMode = .liveStream
+        options.baseOptions.modelAssetPath =
+            modelPath
 
-        // We eventually need two-handed signs.
-        options.numHands = 2
+        options.runningMode =
+            .liveStream
 
-        options.minHandDetectionConfidence = 0.5
-        options.minHandPresenceConfidence = 0.5
-        options.minTrackingConfidence = 0.5
+        options.numHands =
+            2
 
-        options.handLandmarkerLiveStreamDelegate = self
+        options.minHandDetectionConfidence =
+            0.5
+
+        options.minHandPresenceConfidence =
+            0.5
+
+        options.minTrackingConfidence =
+            0.5
+
+        options.handLandmarkerLiveStreamDelegate =
+            self
+
 
         do {
 
-            handLandmarker = try HandLandmarker(
-                options: options
-            )
+            handLandmarker =
+                try HandLandmarker(
+                    options: options
+                )
 
             DispatchQueue.main.async {
-                self.statusText = "Hand tracker ready"
+
+                self.statusText =
+                    "Hand tracker ready"
             }
 
         } catch {
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "Could not create Hand Landmarker: \(error.localizedDescription)"
 
-                self.statusText = "Tracker failed"
+                self.statusText =
+                    "Tracker failed"
             }
         }
     }
@@ -105,48 +140,64 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     private func requestCameraPermission() {
 
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        switch AVCaptureDevice.authorizationStatus(
+            for: .video
+        ) {
 
         case .authorized:
 
             configureCamera()
 
+
         case .notDetermined:
 
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+            AVCaptureDevice.requestAccess(
+                for: .video
+            ) { [weak self] granted in
 
                 guard let self else {
                     return
                 }
 
                 if granted {
+
                     self.configureCamera()
+
                 } else {
+
                     DispatchQueue.main.async {
+
                         self.errorMessage =
                             "Camera permission is required to track your hands."
 
-                        self.statusText = "Camera permission denied"
+                        self.statusText =
+                            "Camera permission denied"
                     }
                 }
             }
 
+
         case .denied, .restricted:
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "Camera permission is disabled. Enable it in Settings."
 
-                self.statusText = "Camera unavailable"
+                self.statusText =
+                    "Camera unavailable"
             }
+
 
         @unknown default:
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "Unknown camera authorization state."
 
-                self.statusText = "Camera unavailable"
+                self.statusText =
+                    "Camera unavailable"
             }
         }
     }
@@ -166,45 +217,72 @@ final class HandTrackingService: NSObject, ObservableObject {
                 return
             }
 
+
             self.session.beginConfiguration()
 
-            self.session.sessionPreset = .high
+            self.session.sessionPreset =
+                .high
 
 
             // MARK: Front Camera
 
-            guard let camera = AVCaptureDevice.default(
-                .builtInWideAngleCamera,
-                for: .video,
-                position: .front
-            ) else {
+            guard let camera =
+                    AVCaptureDevice.default(
+                        .builtInWideAngleCamera,
+                        for: .video,
+                        position: .front
+                    ) else {
 
                 self.session.commitConfiguration()
 
                 DispatchQueue.main.async {
+
                     self.errorMessage =
                         "Front camera could not be found."
 
-                    self.statusText = "No front camera"
+                    self.statusText =
+                        "No front camera"
                 }
 
                 return
             }
 
 
-            // MARK: Input
+            // Give the preview access to the
+            // actual camera device.
+            DispatchQueue.main.async {
+
+                self.cameraDevice =
+                    camera
+            }
+
+
+            // Rotation coordinator for
+            // MediaPipe camera frames.
+            self.captureRotationCoordinator =
+                AVCaptureDevice.RotationCoordinator(
+                    device: camera,
+                    previewLayer: nil
+                )
+
+
+            // MARK: Camera Input
 
             do {
 
-                let input = try AVCaptureDeviceInput(
-                    device: camera
-                )
+                let input =
+                    try AVCaptureDeviceInput(
+                        device: camera
+                    )
 
-                guard self.session.canAddInput(input) else {
+                guard self.session.canAddInput(
+                    input
+                ) else {
 
                     self.session.commitConfiguration()
 
                     DispatchQueue.main.async {
+
                         self.errorMessage =
                             "Could not add camera input."
                     }
@@ -212,13 +290,16 @@ final class HandTrackingService: NSObject, ObservableObject {
                     return
                 }
 
-                self.session.addInput(input)
+                self.session.addInput(
+                    input
+                )
 
             } catch {
 
                 self.session.commitConfiguration()
 
                 DispatchQueue.main.async {
+
                     self.errorMessage =
                         "Camera input error: \(error.localizedDescription)"
                 }
@@ -229,13 +310,18 @@ final class HandTrackingService: NSObject, ObservableObject {
 
             // MARK: Video Output
 
-            let output = AVCaptureVideoDataOutput()
+            let output =
+                AVCaptureVideoDataOutput()
 
-            output.alwaysDiscardsLateVideoFrames = true
+            output.alwaysDiscardsLateVideoFrames =
+                true
 
             output.videoSettings = [
-                kCVPixelBufferPixelFormatTypeKey as String:
-                    kCVPixelFormatType_32BGRA
+
+                kCVPixelBufferPixelFormatTypeKey
+                    as String:
+
+                kCVPixelFormatType_32BGRA
             ]
 
             output.setSampleBufferDelegate(
@@ -243,11 +329,15 @@ final class HandTrackingService: NSObject, ObservableObject {
                 queue: self.videoOutputQueue
             )
 
-            guard self.session.canAddOutput(output) else {
+
+            guard self.session.canAddOutput(
+                output
+            ) else {
 
                 self.session.commitConfiguration()
 
                 DispatchQueue.main.async {
+
                     self.errorMessage =
                         "Could not add video output."
                 }
@@ -255,43 +345,73 @@ final class HandTrackingService: NSObject, ObservableObject {
                 return
             }
 
-            self.session.addOutput(output)
 
-            self.videoOutput = output
+            self.session.addOutput(
+                output
+            )
+
+            self.videoOutput =
+                output
 
 
-            // MARK: Keep detection buffer upright in portrait
+            // MARK: Correct Capture Rotation
 
-            if let connection = output.connection(with: .video) {
+            if let connection =
+                    output.connection(
+                        with: .video
+                    ) {
 
-                if connection.isVideoRotationAngleSupported(90) {
-                    connection.videoRotationAngle = 90
+                if let coordinator =
+                        self.captureRotationCoordinator {
+
+                    let angle =
+                        coordinator
+                            .videoRotationAngleForHorizonLevelCapture
+
+                    if connection
+                        .isVideoRotationAngleSupported(
+                            angle
+                        ) {
+
+                        connection.videoRotationAngle =
+                            angle
+                    }
                 }
 
-                // Do NOT mirror the raw frame sent to MediaPipe.
-                // We mirror only the preview + overlay.
-                if connection.isVideoMirroringSupported {
 
-                    connection.automaticallyAdjustsVideoMirroring = false
-                    connection.isVideoMirrored = false
+                // MediaPipe receives the
+                // original non-mirrored frame.
+                if connection
+                    .isVideoMirroringSupported {
+
+                    connection
+                        .automaticallyAdjustsVideoMirroring =
+                        false
+
+                    connection.isVideoMirrored =
+                        false
                 }
             }
 
 
             self.session.commitConfiguration()
 
-            self.isCameraConfigured = true
+            self.isCameraConfigured =
+                true
 
             self.session.startRunning()
 
+
             DispatchQueue.main.async {
-                self.statusText = "Show your hand"
+
+                self.statusText =
+                    "Show your hand"
             }
         }
     }
 
 
-    // MARK: - Public Camera Controls
+    // MARK: - Camera Controls
 
     func start() {
 
@@ -331,7 +451,7 @@ final class HandTrackingService: NSObject, ObservableObject {
     }
 
 
-    // MARK: - Process Camera Frame
+    // MARK: - MediaPipe Frame Processing
 
     private func process(
         sampleBuffer: CMSampleBuffer
@@ -341,25 +461,34 @@ final class HandTrackingService: NSObject, ObservableObject {
             return
         }
 
+
         do {
 
-            let image = try MPImage(
-                sampleBuffer: sampleBuffer,
-                orientation: .up
-            )
+            let image =
+                try MPImage(
+                    sampleBuffer: sampleBuffer,
+                    orientation: .up
+                )
 
-            let timestampMilliseconds = Int(
-                Date().timeIntervalSince1970 * 1000
-            )
+
+            let timestampMilliseconds =
+                Int(
+                    Date()
+                        .timeIntervalSince1970
+                        * 1000
+                )
+
 
             try handLandmarker.detectAsync(
                 image: image,
-                timestampInMilliseconds: timestampMilliseconds
+                timestampInMilliseconds:
+                    timestampMilliseconds
             )
 
         } catch {
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "Detection error: \(error.localizedDescription)"
             }
@@ -368,7 +497,7 @@ final class HandTrackingService: NSObject, ObservableObject {
 }
 
 
-// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
+// MARK: - Camera Delegate
 
 extension HandTrackingService:
     AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -386,14 +515,15 @@ extension HandTrackingService:
 }
 
 
-// MARK: - MediaPipe Live Stream Delegate
+// MARK: - MediaPipe Delegate
 
 extension HandTrackingService:
     HandLandmarkerLiveStreamDelegate {
 
     func handLandmarker(
         _ handLandmarker: HandLandmarker,
-        didFinishDetection result: HandLandmarkerResult?,
+        didFinishDetection result:
+            HandLandmarkerResult?,
         timestampInMilliseconds: Int,
         error: Error?
     ) {
@@ -401,6 +531,7 @@ extension HandTrackingService:
         if let error {
 
             DispatchQueue.main.async {
+
                 self.errorMessage =
                     "MediaPipe error: \(error.localizedDescription)"
             }
@@ -408,43 +539,62 @@ extension HandTrackingService:
             return
         }
 
+
         guard let result else {
 
             DispatchQueue.main.async {
-                self.handLandmarks = []
-                self.statusText = "Show your hand"
+
+                self.handLandmarks =
+                    []
+
+                self.statusText =
+                    "Show your hand"
             }
 
             return
         }
 
 
-        // Each detected hand contains 21 normalized landmarks.
-        let detectedHands: [[CGPoint]] = result.landmarks.map { hand in
+        let detectedHands:
+            [[CGPoint]] =
+            result.landmarks.map { hand in
 
-            hand.map { landmark in
+                hand.map { landmark in
 
-                CGPoint(
-                    x: CGFloat(landmark.x),
-                    y: CGFloat(landmark.y)
-                )
+                    CGPoint(
+                        x: CGFloat(
+                            landmark.x
+                        ),
+                        y: CGFloat(
+                            landmark.y
+                        )
+                    )
+                }
             }
-        }
 
 
         DispatchQueue.main.async {
 
-            self.handLandmarks = detectedHands
+            self.handLandmarks =
+                detectedHands
+
 
             switch detectedHands.count {
 
             case 0:
-                self.statusText = "Show your hand"
+
+                self.statusText =
+                    "Show your hand"
+
 
             case 1:
-                self.statusText = "1 hand · 21 landmarks"
+
+                self.statusText =
+                    "1 hand · 21 landmarks"
+
 
             default:
+
                 self.statusText =
                     "\(detectedHands.count) hands · \(detectedHands.count * 21) landmarks"
             }

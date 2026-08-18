@@ -53,7 +53,8 @@ struct ContentView: View {
                 ZStack {
 
                     CameraPreview(
-                        session: handTracker.session
+                        session: handTracker.session,
+                        cameraDevice: handTracker.cameraDevice
                     )
 
                     HandLandmarkOverlay(

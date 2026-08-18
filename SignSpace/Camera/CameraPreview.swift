@@ -5,14 +5,14 @@ import UIKit
 struct CameraPreview: UIViewRepresentable {
 
     let session: AVCaptureSession
+    let cameraDevice: AVCaptureDevice?
 
-    func makeUIView(
-        context: Context
-    ) -> CameraPreviewUIView {
+    func makeUIView(context: Context) -> CameraPreviewUIView {
 
         let view = CameraPreviewUIView()
 
         view.session = session
+        view.cameraDevice = cameraDevice
 
         return view
     }
@@ -23,21 +23,22 @@ struct CameraPreview: UIViewRepresentable {
     ) {
 
         uiView.session = session
-        uiView.configurePreviewConnection()
+        uiView.cameraDevice = cameraDevice
     }
 }
 
 
 final class CameraPreviewUIView: UIView {
 
+    // MARK: - Preview Layer
+
     override class var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self
     }
 
-
     private var previewLayer: AVCaptureVideoPreviewLayer {
 
-        guard let layer =
+        guard let previewLayer =
                 layer as? AVCaptureVideoPreviewLayer else {
 
             fatalError(
@@ -45,9 +46,11 @@ final class CameraPreviewUIView: UIView {
             )
         }
 
-        return layer
+        return previewLayer
     }
 
+
+    // MARK: - Session
 
     var session: AVCaptureSession? {
 
@@ -58,41 +61,106 @@ final class CameraPreviewUIView: UIView {
         set {
 
             previewLayer.session = newValue
+
             previewLayer.videoGravity = .resizeAspectFill
+        }
+    }
+
+
+    // MARK: - Camera
+
+    var cameraDevice: AVCaptureDevice? {
+
+        didSet {
+
+            guard oldValue !== cameraDevice else {
+                return
+            }
+
+            configureRotationCoordinator()
+        }
+    }
+
+
+    // MARK: - Rotation
+
+    private var rotationCoordinator:
+        AVCaptureDevice.RotationCoordinator?
+
+    private var rotationObservation:
+        NSKeyValueObservation?
+
+
+    private func configureRotationCoordinator() {
+
+        rotationObservation = nil
+        rotationCoordinator = nil
+
+        guard let cameraDevice else {
+            return
+        }
+
+        let coordinator =
+            AVCaptureDevice.RotationCoordinator(
+                device: cameraDevice,
+                previewLayer: previewLayer
+            )
+
+        rotationCoordinator = coordinator
+
+        rotationObservation = coordinator.observe(
+            \.videoRotationAngleForHorizonLevelPreview,
+            options: [.initial, .new]
+        ) { [weak self] coordinator, _ in
 
             DispatchQueue.main.async {
-                self.configurePreviewConnection()
+
+                self?.applyRotation(
+                    coordinator.videoRotationAngleForHorizonLevelPreview
+                )
             }
         }
     }
 
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        configurePreviewConnection()
-    }
-
-
-    func configurePreviewConnection() {
+    private func applyRotation(
+        _ angle: CGFloat
+    ) {
 
         guard let connection =
                 previewLayer.connection else {
             return
         }
 
-
-        if connection.isVideoRotationAngleSupported(90) {
-            connection.videoRotationAngle = 90
+        guard connection.isVideoRotationAngleSupported(
+            angle
+        ) else {
+            return
         }
 
+        connection.videoRotationAngle = angle
 
-        // Mirror only what the user sees,
-        // just like the normal selfie camera.
+        // Selfie-style mirror
         if connection.isVideoMirroringSupported {
 
             connection.automaticallyAdjustsVideoMirroring = false
             connection.isVideoMirrored = true
+        }
+    }
+
+
+    // MARK: - Layout
+
+    override func layoutSubviews() {
+
+        super.layoutSubviews()
+
+        if let rotationCoordinator {
+
+            applyRotation(
+                rotationCoordinator
+                    .videoRotationAngleForHorizonLevelPreview
+            )
         }
     }
 }
