@@ -5,6 +5,9 @@ struct ContentView: View {
     @StateObject private var handTracker =
         HandTrackingService()
 
+    @State private var motionToView:
+        SignMotion?
+
 
     var body: some View {
 
@@ -32,22 +35,32 @@ struct ContentView: View {
                         spacing: 6
                     ) {
 
-                        Text("SignSpace")
-                            .font(
-                                .system(
-                                    size: 34,
-                                    weight: .bold,
-                                    design: .rounded
-                                )
+                        Text(
+                            "SignSpace"
+                        )
+                        .font(
+                            .system(
+                                size: 34,
+                                weight: .bold,
+                                design: .rounded
                             )
+                        )
+
 
                         Text(
                             "Capture movement, not just video."
                         )
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(
+                            .subheadline
+                        )
+                        .foregroundStyle(
+                            .secondary
+                        )
                     }
-                    .padding(.horizontal, 24)
+                    .padding(
+                        .horizontal,
+                        24
+                    )
 
 
                     // MARK: - Camera
@@ -67,8 +80,6 @@ struct ContentView: View {
                                 handTracker.handLandmarks
                         )
 
-
-                        // MARK: Status
 
                         VStack {
 
@@ -106,10 +117,18 @@ struct ContentView: View {
 
                                 Spacer()
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
+                            .padding(
+                                .horizontal,
+                                14
+                            )
+                            .padding(
+                                .vertical,
+                                10
+                            )
                             .background(
-                                .black.opacity(0.45)
+                                .black.opacity(
+                                    0.45
+                                )
                             )
 
 
@@ -126,17 +145,21 @@ struct ContentView: View {
                             style: .continuous
                         )
                     )
-                    .padding(.horizontal, 20)
+                    .padding(
+                        .horizontal,
+                        20
+                    )
 
 
-                    // MARK: - Recording Button
+                    // MARK: - Record Button
 
                     Button {
 
                         if handTracker.isRecording {
 
                             handTracker.stopRecording(
-                                name: "Test Sign"
+                                name:
+                                    "Test Sign"
                             )
 
                         } else {
@@ -170,7 +193,9 @@ struct ContentView: View {
                                     RoundedRectangle(
                                         cornerRadius: 4
                                     )
-                                    .fill(.white)
+                                    .fill(
+                                        .white
+                                    )
                                     .frame(
                                         width: 12,
                                         height: 12
@@ -179,7 +204,9 @@ struct ContentView: View {
                                 } else {
 
                                     Circle()
-                                        .fill(.red)
+                                        .fill(
+                                            .red
+                                        )
                                         .frame(
                                             width: 18,
                                             height: 18
@@ -216,7 +243,9 @@ struct ContentView: View {
                                     )
                                 )
                                 .foregroundStyle(
-                                    .white.opacity(0.8)
+                                    .white.opacity(
+                                        0.8
+                                    )
                                 )
                             }
                         }
@@ -235,7 +264,9 @@ struct ContentView: View {
                         .background(
                             handTracker.isRecording
                             ? Color.red
-                            : Color.white.opacity(0.8)
+                            : Color.white.opacity(
+                                0.8
+                            )
                         )
                         .clipShape(
                             RoundedRectangle(
@@ -244,8 +275,13 @@ struct ContentView: View {
                             )
                         )
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
+                    .buttonStyle(
+                        .plain
+                    )
+                    .padding(
+                        .horizontal,
+                        20
+                    )
 
 
                     // MARK: - Latest Recording
@@ -255,7 +291,7 @@ struct ContentView: View {
 
                         VStack(
                             alignment: .leading,
-                            spacing: 14
+                            spacing: 16
                         ) {
 
                             HStack {
@@ -271,6 +307,7 @@ struct ContentView: View {
                                     .font(
                                         .headline
                                     )
+
 
                                     Text(
                                         recording.name
@@ -308,7 +345,8 @@ struct ContentView: View {
                             HStack {
 
                                 recordingStat(
-                                    title: "Frames",
+                                    title:
+                                        "Frames",
                                     value:
                                         "\(recording.frameCount)"
                                 )
@@ -318,7 +356,8 @@ struct ContentView: View {
 
 
                                 recordingStat(
-                                    title: "Duration",
+                                    title:
+                                        "Duration",
                                     value:
                                         String(
                                             format:
@@ -332,14 +371,80 @@ struct ContentView: View {
 
 
                                 recordingStat(
-                                    title: "3D",
-                                    value: "✓"
+                                    title:
+                                        "3D",
+                                    value:
+                                        "✓"
                                 )
                             }
+
+
+                            Button {
+
+                                motionToView =
+                                    recording
+
+                            } label: {
+
+                                HStack {
+
+                                    Image(
+                                        systemName:
+                                            "cube.transparent"
+                                    )
+
+
+                                    Text(
+                                        "View 3D Motion"
+                                    )
+                                    .fontWeight(
+                                        .semibold
+                                    )
+
+
+                                    Spacer()
+
+
+                                    Image(
+                                        systemName:
+                                            "chevron.right"
+                                    )
+                                }
+                                .foregroundStyle(
+                                    .white
+                                )
+                                .padding(
+                                    .horizontal,
+                                    18
+                                )
+                                .frame(
+                                    height: 54
+                                )
+                                .background(
+                                    Color(
+                                        red: 0.95,
+                                        green: 0.37,
+                                        blue: 0.55
+                                    )
+                                )
+                                .clipShape(
+                                    RoundedRectangle(
+                                        cornerRadius: 16,
+                                        style: .continuous
+                                    )
+                                )
+                            }
+                            .buttonStyle(
+                                .plain
+                            )
                         }
-                        .padding(20)
+                        .padding(
+                            20
+                        )
                         .background(
-                            Color.white.opacity(0.75)
+                            Color.white.opacity(
+                                0.78
+                            )
                         )
                         .clipShape(
                             RoundedRectangle(
@@ -347,7 +452,10 @@ struct ContentView: View {
                                 style: .continuous
                             )
                         )
-                        .padding(.horizontal, 20)
+                        .padding(
+                            .horizontal,
+                            20
+                        )
                     }
 
 
@@ -356,13 +464,19 @@ struct ContentView: View {
                     if let error =
                         handTracker.errorMessage {
 
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                            .padding(
-                                .horizontal,
-                                24
-                            )
+                        Text(
+                            error
+                        )
+                        .font(
+                            .footnote
+                        )
+                        .foregroundStyle(
+                            .red
+                        )
+                        .padding(
+                            .horizontal,
+                            24
+                        )
                     }
 
 
@@ -370,7 +484,10 @@ struct ContentView: View {
                         minLength: 30
                     )
                 }
-                .padding(.top, 20)
+                .padding(
+                    .top,
+                    20
+                )
             }
         }
         .onAppear {
@@ -380,6 +497,19 @@ struct ContentView: View {
         .onDisappear {
 
             handTracker.stop()
+        }
+        .sheet(
+            item:
+                $motionToView
+        ) { motion in
+
+            NavigationStack {
+
+                SignViewerView(
+                    motion:
+                        motion
+                )
+            }
         }
     }
 
@@ -396,23 +526,27 @@ struct ContentView: View {
             spacing: 4
         ) {
 
-            Text(title)
-                .font(
-                    .caption
-                )
-                .foregroundStyle(
-                    .secondary
-                )
+            Text(
+                title
+            )
+            .font(
+                .caption
+            )
+            .foregroundStyle(
+                .secondary
+            )
 
 
-            Text(value)
-                .font(
-                    .system(
-                        size: 17,
-                        weight: .semibold,
-                        design: .rounded
-                    )
+            Text(
+                value
+            )
+            .font(
+                .system(
+                    size: 17,
+                    weight: .semibold,
+                    design: .rounded
                 )
+            )
         }
     }
 }
