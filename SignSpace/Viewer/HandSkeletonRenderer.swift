@@ -1,10 +1,3 @@
-//
-//  HandSkeletonRenderer.swift
-//  SignSpace
-//
-//  Created by Jaewon Park on 8/18/26.
-//
-
 import Foundation
 import RealityKit
 import UIKit
@@ -18,8 +11,20 @@ final class HandSkeletonRenderer {
 
     private var handSkeletons: [HandSkeletonEntity] = []
 
+    private let trailRoot = Entity()
 
-    // MARK: - Update
+    private var trailDots: [ModelEntity] = []
+
+
+    // MARK: - Init
+
+    init() {
+
+        root.addChild(trailRoot)
+    }
+
+
+    // MARK: - Hand Update
 
     func update(with frame: SignFrame) {
 
@@ -43,6 +48,238 @@ final class HandSkeletonRenderer {
     }
 
 
+    // MARK: - Movement Trail
+
+    func updateTrail(
+        motion: SignMotion,
+        through frameIndex: Int,
+        isVisible: Bool
+    ) {
+
+        trailRoot.isEnabled = isVisible
+
+        guard isVisible else {
+            return
+        }
+
+        guard !motion.frames.isEmpty else {
+
+            hideAllTrailDots()
+
+            return
+        }
+
+
+        let safeIndex = min(
+            max(frameIndex, 0),
+            motion.frames.count - 1
+        )
+
+
+        // Avoid creating hundreds of 3D entities
+        // for very long recordings.
+
+        let maximumTrailPoints = 80
+
+        let frameCount =
+            safeIndex + 1
+
+        let strideAmount =
+            max(
+                1,
+                frameCount / maximumTrailPoints
+            )
+
+
+        var points: [SIMD3<Float>] = []
+
+
+        var index = 0
+
+        while index <= safeIndex {
+
+            let frame =
+                motion.frames[index]
+
+
+            if let hand =
+                frame.hands.first {
+
+                if let wristPosition =
+                    makeWristPosition(
+                        from: hand
+                    ) {
+
+                    points.append(
+                        wristPosition
+                    )
+                }
+            }
+
+
+            index += strideAmount
+        }
+
+
+        // Always include current frame.
+
+        if let currentHand =
+            motion.frames[safeIndex]
+                .hands
+                .first,
+           let currentWrist =
+            makeWristPosition(
+                from: currentHand
+            ) {
+
+            if points.last != currentWrist {
+
+                points.append(
+                    currentWrist
+                )
+            }
+        }
+
+
+        ensureTrailDotCount(
+            points.count
+        )
+
+
+        for dotIndex in trailDots.indices {
+
+            if dotIndex < points.count {
+
+                trailDots[dotIndex]
+                    .isEnabled = true
+
+                trailDots[dotIndex]
+                    .position =
+                    points[dotIndex]
+
+            } else {
+
+                trailDots[dotIndex]
+                    .isEnabled = false
+            }
+        }
+    }
+
+
+    // MARK: - Trail Coordinates
+
+    private func makeWristPosition(
+        from hand: HandFrame
+    ) -> SIMD3<Float>? {
+
+        guard
+            hand.normalizedLandmarks.count > 0,
+            hand.worldLandmarks.count > 0
+        else {
+            return nil
+        }
+
+
+        let normalizedWrist =
+            hand.normalizedLandmarks[0]
+
+        let worldWrist =
+            hand.worldLandmarks[0]
+
+
+        // Global movement in camera space.
+
+        let horizontalOffset =
+            (normalizedWrist.x - 0.5)
+            * 0.45
+
+        let verticalOffset =
+            (0.5 - normalizedWrist.y)
+            * 0.55
+
+
+        // Local 3D wrist position.
+
+        let handScale: Float =
+            1.5
+
+        let localWrist =
+            SIMD3<Float>(
+                worldWrist.x,
+                -worldWrist.y,
+                -worldWrist.z
+            )
+            * handScale
+
+
+        return localWrist +
+            SIMD3<Float>(
+                horizontalOffset,
+                verticalOffset,
+                0
+            )
+    }
+
+
+    // MARK: - Trail Entities
+
+    private func ensureTrailDotCount(
+        _ count: Int
+    ) {
+
+        guard trailDots.count < count else {
+            return
+        }
+
+
+        let mesh =
+            MeshResource.generateSphere(
+                radius: 0.003
+            )
+
+
+        let material =
+            UnlitMaterial(
+                color: UIColor(
+                    red: 1.0,
+                    green: 0.58,
+                    blue: 0.72,
+                    alpha: 0.8
+                )
+            )
+
+
+        while trailDots.count < count {
+
+            let dot =
+                ModelEntity(
+                    mesh: mesh,
+                    materials: [material]
+                )
+
+
+            trailDots.append(
+                dot
+            )
+
+
+            trailRoot.addChild(
+                dot
+            )
+        }
+    }
+
+
+    private func hideAllTrailDots() {
+
+        for dot in trailDots {
+
+            dot.isEnabled =
+                false
+        }
+    }
+
+
     // MARK: - Camera / User Transform
 
     func setViewTransform(
@@ -51,18 +288,32 @@ final class HandSkeletonRenderer {
         zoom: Float
     ) {
 
-        let yawRotation = simd_quatf(
-            angle: yaw,
-            axis: SIMD3<Float>(0, 1, 0)
-        )
+        let yawRotation =
+            simd_quatf(
+                angle: yaw,
+                axis: SIMD3<Float>(
+                    0,
+                    1,
+                    0
+                )
+            )
 
-        let pitchRotation = simd_quatf(
-            angle: pitch,
-            axis: SIMD3<Float>(1, 0, 0)
-        )
+
+        let pitchRotation =
+            simd_quatf(
+                angle: pitch,
+                axis: SIMD3<Float>(
+                    1,
+                    0,
+                    0
+                )
+            )
+
 
         root.orientation =
-            yawRotation * pitchRotation
+            yawRotation
+            * pitchRotation
+
 
         root.scale =
             SIMD3<Float>(
@@ -71,7 +322,7 @@ final class HandSkeletonRenderer {
     }
 
 
-    // MARK: - Setup
+    // MARK: - Hand Setup
 
     private func ensureHandCount(
         _ count: Int
@@ -82,9 +333,11 @@ final class HandSkeletonRenderer {
             let skeleton =
                 HandSkeletonEntity()
 
+
             handSkeletons.append(
                 skeleton
             )
+
 
             root.addChild(
                 skeleton.root
@@ -149,6 +402,7 @@ private final class HandSkeletonEntity {
     init() {
 
         createJoints()
+
         createBones()
     }
 
@@ -161,6 +415,7 @@ private final class HandSkeletonEntity {
             MeshResource.generateSphere(
                 radius: 0.0045
             )
+
 
         let material =
             UnlitMaterial(
@@ -181,9 +436,11 @@ private final class HandSkeletonEntity {
                     materials: [material]
                 )
 
+
             joints.append(
                 joint
             )
+
 
             root.addChild(
                 joint
@@ -196,19 +453,12 @@ private final class HandSkeletonEntity {
 
     private func createBones() {
 
-        /*
-         Cylinder height is 1 meter here.
-
-         We scale its Y axis every frame
-         so its final length matches the
-         distance between two landmarks.
-         */
-
         let mesh =
             MeshResource.generateCylinder(
                 height: 1.0,
                 radius: 1.0
             )
+
 
         let material =
             UnlitMaterial(
@@ -227,9 +477,11 @@ private final class HandSkeletonEntity {
                     materials: [material]
                 )
 
+
             bones.append(
                 bone
             )
+
 
             root.addChild(
                 bone
@@ -244,12 +496,18 @@ private final class HandSkeletonEntity {
         with hand: HandFrame
     ) {
 
-        guard hand.worldLandmarks.count == 21 else {
+        guard
+            hand.worldLandmarks.count == 21
+        else {
+
             root.isEnabled = false
+
             return
         }
 
-        root.isEnabled = true
+
+        root.isEnabled =
+            true
 
 
         let positions =
@@ -279,10 +537,12 @@ private final class HandSkeletonEntity {
                     connection.0
                 ]
 
+
             let end =
                 positions[
                     connection.1
                 ]
+
 
             updateBone(
                 bones[boneIndex],
@@ -299,38 +559,31 @@ private final class HandSkeletonEntity {
         from hand: HandFrame
     ) -> [SIMD3<Float>] {
 
-        /*
-         MediaPipe hand-world coordinates
-         give us local 3D hand geometry.
-
-         For this first viewer, we also use
-         the normalized wrist location to
-         retain some of the hand's movement
-         across the camera frame.
-         */
-
         let wrist =
             hand.normalizedLandmarks.first
 
 
         let horizontalOffset: Float
-
         let verticalOffset: Float
 
 
         if let wrist {
 
             horizontalOffset =
-                (wrist.x - 0.5) * 0.45
+                (wrist.x - 0.5)
+                * 0.45
 
             verticalOffset =
-                (0.5 - wrist.y) * 0.55
+                (0.5 - wrist.y)
+                * 0.55
 
         } else {
 
-            horizontalOffset = 0
+            horizontalOffset =
+                0
 
-            verticalOffset = 0
+            verticalOffset =
+                0
         }
 
 
@@ -355,8 +608,10 @@ private final class HandSkeletonEntity {
                     -$0.z
                 )
 
+
             return
-                local * handScale
+                local
+                * handScale
                 + positionOffset
         }
     }
@@ -372,6 +627,7 @@ private final class HandSkeletonEntity {
 
         let direction =
             end - start
+
 
         let length =
             simd_length(
@@ -392,13 +648,10 @@ private final class HandSkeletonEntity {
             true
 
 
-        // Position at the midpoint.
-
         bone.position =
-            (start + end) / 2
+            (start + end)
+            / 2
 
-
-        // Thin cylinder with the correct length.
 
         bone.scale =
             SIMD3<Float>(
@@ -408,11 +661,9 @@ private final class HandSkeletonEntity {
             )
 
 
-        // RealityKit cylinders point along Y.
-        // Rotate Y to point toward the next joint.
-
         let normalizedDirection =
-            direction / length
+            direction
+            / length
 
 
         bone.orientation =

@@ -2,18 +2,26 @@ import SwiftUI
 import RealityKit
 import UIKit
 
-struct RealityKitHandView: UIViewRepresentable {
+struct RealityKitHandView:
+    UIViewRepresentable {
 
-    let frame: SignFrame
+    let motion: SignMotion
+
+    let currentFrameIndex: Int
 
     let yaw: Float
+
     let pitch: Float
+
     let zoom: Float
+
+    let showTrail: Bool
 
 
     // MARK: - Coordinator
 
     func makeCoordinator() -> Coordinator {
+
         Coordinator()
     }
 
@@ -24,34 +32,43 @@ struct RealityKitHandView: UIViewRepresentable {
         context: Context
     ) -> ARView {
 
-        let arView = ARView(
-            frame: .zero,
-            cameraMode: .nonAR,
-            automaticallyConfigureSession: false
-        )
-
-        arView.environment.background = .color(
-            UIColor(
-                red: 0.055,
-                green: 0.055,
-                blue: 0.065,
-                alpha: 1.0
+        let arView =
+            ARView(
+                frame: .zero,
+                cameraMode: .nonAR,
+                automaticallyConfigureSession: false
             )
-        )
+
+
+        arView.environment.background =
+            .color(
+                UIColor(
+                    red: 0.055,
+                    green: 0.055,
+                    blue: 0.065,
+                    alpha: 1.0
+                )
+            )
 
 
         // MARK: Root Anchor
 
-        let anchor = AnchorEntity()
+        let anchor =
+            AnchorEntity()
+
 
         anchor.addChild(
-            context.coordinator.renderer.root
+            context.coordinator
+                .renderer
+                .root
         )
 
 
         // MARK: Virtual Camera
 
-        let camera = PerspectiveCamera()
+        let camera =
+            PerspectiveCamera()
+
 
         camera.look(
             at: SIMD3<Float>(
@@ -67,26 +84,27 @@ struct RealityKitHandView: UIViewRepresentable {
             relativeTo: nil
         )
 
-        anchor.addChild(camera)
 
-        arView.scene.addAnchor(anchor)
-
-
-        context.coordinator.anchor = anchor
-
-        context.coordinator.camera = camera
-
-
-        // MARK: Initial Frame
-
-        context.coordinator.renderer.update(
-            with: frame
+        anchor.addChild(
+            camera
         )
 
-        context.coordinator.renderer.setViewTransform(
-            yaw: yaw,
-            pitch: pitch,
-            zoom: zoom
+
+        arView.scene.addAnchor(
+            anchor
+        )
+
+
+        context.coordinator.anchor =
+            anchor
+
+        context.coordinator.camera =
+            camera
+
+
+        updateRenderer(
+            context:
+                context
         )
 
 
@@ -101,15 +119,58 @@ struct RealityKitHandView: UIViewRepresentable {
         context: Context
     ) {
 
+        updateRenderer(
+            context:
+                context
+        )
+    }
+
+
+    // MARK: - Renderer Update
+
+    private func updateRenderer(
+        context: Context
+    ) {
+
+        guard !motion.frames.isEmpty else {
+            return
+        }
+
+
+        let safeIndex =
+            min(
+                max(
+                    currentFrameIndex,
+                    0
+                ),
+                motion.frames.count - 1
+            )
+
+
+        let frame =
+            motion.frames[
+                safeIndex
+            ]
+
+
         context.coordinator.renderer.update(
             with: frame
         )
 
-        context.coordinator.renderer.setViewTransform(
-            yaw: yaw,
-            pitch: pitch,
-            zoom: zoom
+
+        context.coordinator.renderer.updateTrail(
+            motion: motion,
+            through: safeIndex,
+            isVisible: showTrail
         )
+
+
+        context.coordinator.renderer
+            .setViewTransform(
+                yaw: yaw,
+                pitch: pitch,
+                zoom: zoom
+            )
     }
 
 
@@ -117,10 +178,15 @@ struct RealityKitHandView: UIViewRepresentable {
 
     final class Coordinator {
 
-        let renderer = HandSkeletonRenderer()
+        let renderer =
+            HandSkeletonRenderer()
 
-        var anchor: AnchorEntity?
 
-        var camera: PerspectiveCamera?
+        var anchor:
+            AnchorEntity?
+
+
+        var camera:
+            PerspectiveCamera?
     }
 }

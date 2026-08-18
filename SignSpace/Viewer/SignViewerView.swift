@@ -23,7 +23,7 @@ struct SignViewerView: View {
         Double = 1.0
 
 
-    // MARK: - 3D View State
+    // MARK: - Viewer
 
     @State private var yaw:
         Float = 0
@@ -35,7 +35,11 @@ struct SignViewerView: View {
         Float = 1.0
 
 
-    // Gesture tracking
+    @State private var showTrail =
+        true
+
+
+    // MARK: - Gesture
 
     @State private var previousDrag:
         CGSize = .zero
@@ -62,12 +66,7 @@ struct SignViewerView: View {
                 spacing: 0
             ) {
 
-                // MARK: 3D Viewer
-
                 viewer
-
-
-                // MARK: Controls
 
                 controls
             }
@@ -81,7 +80,8 @@ struct SignViewerView: View {
         .toolbar {
 
             ToolbarItem(
-                placement: .topBarLeading
+                placement:
+                    .topBarLeading
             ) {
 
                 Button {
@@ -99,7 +99,8 @@ struct SignViewerView: View {
 
 
             ToolbarItem(
-                placement: .topBarTrailing
+                placement:
+                    .topBarTrailing
             ) {
 
                 Button(
@@ -131,73 +132,106 @@ struct SignViewerView: View {
 
             if motion.frames.isEmpty {
 
-                VStack(
-                    spacing: 12
-                ) {
-
-                    Image(
-                        systemName:
-                            "hand.raised.slash"
-                    )
-                    .font(
-                        .system(
-                            size: 42
-                        )
-                    )
-
-                    Text(
-                        "No motion frames"
-                    )
-                    .font(
-                        .headline
-                    )
-                }
+                Text(
+                    "No motion frames"
+                )
 
             } else {
 
                 RealityKitHandView(
-                    frame:
-                        motion.frames[
-                            safeFrameIndex
-                        ],
+                    motion:
+                        motion,
+                    currentFrameIndex:
+                        safeFrameIndex,
                     yaw:
                         yaw,
                     pitch:
                         pitch,
                     zoom:
-                        zoom
+                        zoom,
+                    showTrail:
+                        showTrail
                 )
             }
 
 
-            // MARK: Instructions
-
             VStack {
+
+                HStack {
+
+                    Spacer()
+
+
+                    Button {
+
+                        showTrail.toggle()
+
+                    } label: {
+
+                        HStack(
+                            spacing: 6
+                        ) {
+
+                            Image(
+                                systemName:
+                                    showTrail
+                                    ? "eye"
+                                    : "eye.slash"
+                            )
+
+
+                            Text(
+                                "Trail"
+                            )
+                        }
+                        .font(
+                            .system(
+                                size: 13,
+                                weight: .semibold
+                            )
+                        )
+                        .foregroundStyle(
+                            .white
+                        )
+                        .padding(
+                            .horizontal,
+                            12
+                        )
+                        .padding(
+                            .vertical,
+                            8
+                        )
+                        .background(
+                            .black.opacity(
+                                0.4
+                            )
+                        )
+                        .clipShape(
+                            Capsule()
+                        )
+                    }
+                    .buttonStyle(
+                        .plain
+                    )
+                }
+                .padding(
+                    16
+                )
+
 
                 Spacer()
 
 
-                HStack(
-                    spacing: 14
-                ) {
-
-                    Label(
-                        "Drag to rotate",
-                        systemImage:
-                            "hand.draw"
-                    )
-
-                    Label(
-                        "Pinch to zoom",
-                        systemImage:
-                            "arrow.up.left.and.arrow.down.right"
-                    )
-                }
+                Text(
+                    "Drag to rotate · Pinch to zoom"
+                )
                 .font(
                     .caption
                 )
                 .foregroundStyle(
-                    .white.opacity(0.75)
+                    .white.opacity(
+                        0.75
+                    )
                 )
                 .padding(
                     .horizontal,
@@ -208,7 +242,9 @@ struct SignViewerView: View {
                     10
                 )
                 .background(
-                    .black.opacity(0.35)
+                    .black.opacity(
+                        0.35
+                    )
                 )
                 .clipShape(
                     Capsule()
@@ -220,10 +256,12 @@ struct SignViewerView: View {
             }
         }
         .frame(
-            maxWidth: .infinity
+            maxWidth:
+                .infinity
         )
         .frame(
-            height: 470
+            height:
+                470
         )
         .contentShape(
             Rectangle()
@@ -244,8 +282,6 @@ struct SignViewerView: View {
         VStack(
             spacing: 20
         ) {
-
-            // MARK: Frame Info
 
             HStack {
 
@@ -318,7 +354,8 @@ struct SignViewerView: View {
                     ),
                     in:
                         0...Double(
-                            motion.frames.count - 1
+                            motion.frames.count
+                            - 1
                         ),
                     step:
                         1
@@ -439,7 +476,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Rotation Gesture
+    // MARK: - Rotation
 
     private var rotationGesture:
         some Gesture {
@@ -451,6 +488,7 @@ struct SignViewerView: View {
                     value.translation.width
                     - previousDrag.width
 
+
                 let deltaY =
                     value.translation.height
                     - previousDrag.height
@@ -459,6 +497,7 @@ struct SignViewerView: View {
                 yaw +=
                     Float(deltaX)
                     * 0.008
+
 
                 pitch +=
                     Float(deltaY)
@@ -486,7 +525,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Zoom Gesture
+    // MARK: - Zoom
 
     private var zoomGesture:
         some Gesture {
@@ -500,9 +539,7 @@ struct SignViewerView: View {
 
 
                 zoom *=
-                    Float(
-                        change
-                    )
+                    Float(change)
 
 
                 zoom =
@@ -530,7 +567,9 @@ struct SignViewerView: View {
 
     private func togglePlayback() {
 
-        guard !motion.frames.isEmpty else {
+        guard
+            !motion.frames.isEmpty
+        else {
             return
         }
 
@@ -558,9 +597,12 @@ struct SignViewerView: View {
 
 
     @MainActor
-    private func runPlayback() async {
+    private func runPlayback()
+        async {
 
-        guard motion.frames.count > 1 else {
+        guard
+            motion.frames.count > 1
+        else {
 
             isPlaying =
                 false
@@ -578,6 +620,7 @@ struct SignViewerView: View {
                 motion.frames[
                     currentFrameIndex
                 ]
+
 
             let next =
                 motion.frames[
@@ -600,16 +643,12 @@ struct SignViewerView: View {
                 / playbackSpeed
 
 
-            let nanoseconds =
-                UInt64(
-                    adjustedDelay
-                    * 1_000_000
-                )
-
-
             try? await Task.sleep(
                 nanoseconds:
-                    nanoseconds
+                    UInt64(
+                        adjustedDelay
+                        * 1_000_000
+                    )
             )
 
 
@@ -642,6 +681,7 @@ struct SignViewerView: View {
         isPlaying =
             false
 
+
         currentFrameIndex =
             max(
                 currentFrameIndex - 1,
@@ -654,6 +694,7 @@ struct SignViewerView: View {
 
         isPlaying =
             false
+
 
         currentFrameIndex =
             min(
@@ -670,9 +711,14 @@ struct SignViewerView: View {
 
     private func resetView() {
 
-        yaw = 0
-        pitch = 0
-        zoom = 1
+        yaw =
+            0
+
+        pitch =
+            0
+
+        zoom =
+            1
     }
 
 
@@ -680,9 +726,12 @@ struct SignViewerView: View {
 
     private var safeFrameIndex: Int {
 
-        guard !motion.frames.isEmpty else {
+        guard
+            !motion.frames.isEmpty
+        else {
             return 0
         }
+
 
         return min(
             max(
