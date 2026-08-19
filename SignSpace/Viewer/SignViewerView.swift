@@ -13,41 +13,54 @@ struct SignViewerView: View {
 
     // MARK: - Playback
 
-    @State private var currentFrameIndex =
-        0
+    @State private var currentFrameIndex = 0
 
-    @State private var isPlaying =
-        false
+    @State private var isPlaying = false
 
-    @State private var playbackSpeed:
-        Double = 1.0
+    @State private var playbackSpeed: Double = 1.0
 
 
-    // MARK: - Viewer
+    // MARK: - 3D View
 
-    @State private var yaw:
-        Float = 0
+    @State private var yaw: Float = 0
 
-    @State private var pitch:
-        Float = 0
+    @State private var pitch: Float = 0
 
-    @State private var zoom:
-        Float = 1.0
+    @State private var zoom: Float = 1.0
 
-    @State private var showTrail =
-        true
+    @State private var showTrail = true
+
+
+    // MARK: - View Presets
+
+    private enum ViewPreset {
+
+        case front
+        case side
+        case top
+        case custom
+    }
+
+
+    @State private var viewPreset:
+        ViewPreset = .front
 
 
     // MARK: - Practice
 
-    @State private var showPractice =
-        false
+    @State private var showPractice = false
 
     @State private var practiceAttempt:
         SignMotion?
 
+    @State private var pendingPracticeResult:
+        PracticeMatchResult?
 
-    // MARK: - Gesture
+    @State private var practiceResultToShow:
+        PracticeMatchResult?
+
+
+    // MARK: - Gesture State
 
     @State private var previousDrag:
         CGSize = .zero
@@ -94,6 +107,8 @@ struct SignViewerView: View {
 
                 Button {
 
+                    isPlaying = false
+
                     dismiss()
 
                 } label: {
@@ -127,11 +142,41 @@ struct SignViewerView: View {
                 return
             }
 
+
             await runPlayback()
         }
         .fullScreenCover(
             isPresented:
-                $showPractice
+                $showPractice,
+            onDismiss: {
+
+                guard
+                    let result =
+                        pendingPracticeResult
+                else {
+
+                    return
+                }
+
+
+                pendingPracticeResult =
+                    nil
+
+
+                // Give the full-screen camera
+                // presentation a moment to disappear
+                // before presenting the result sheet.
+
+                DispatchQueue.main.asyncAfter(
+                    deadline:
+                        .now()
+                        + 0.2
+                ) {
+
+                    practiceResultToShow =
+                        result
+                }
+            }
         ) {
 
             NavigationStack {
@@ -143,7 +188,43 @@ struct SignViewerView: View {
 
                     practiceAttempt =
                         attempt
+
+
+                    pendingPracticeResult =
+                        MotionMatcher.compare(
+                            target:
+                                motion,
+                            user:
+                                attempt
+                        )
                 }
+            }
+        }
+        .sheet(
+            item:
+                $practiceResultToShow
+        ) { result in
+
+            if let attempt =
+                practiceAttempt {
+
+                NavigationStack {
+
+                    PracticeResultView(
+                        targetMotion:
+                            motion,
+                        userMotion:
+                            attempt,
+                        result:
+                            result
+                    )
+                }
+
+            } else {
+
+                Text(
+                    "Practice attempt unavailable."
+                )
             }
         }
     }
@@ -155,10 +236,12 @@ struct SignViewerView: View {
 
         ZStack {
 
+            // MARK: RealityKit
+
             if motion.frames.isEmpty {
 
                 VStack(
-                    spacing: 10
+                    spacing: 12
                 ) {
 
                     Image(
@@ -167,7 +250,12 @@ struct SignViewerView: View {
                     )
                     .font(
                         .system(
-                            size: 40
+                            size: 42
+                        )
+                    )
+                    .foregroundStyle(
+                        .white.opacity(
+                            0.7
                         )
                     )
 
@@ -177,6 +265,9 @@ struct SignViewerView: View {
                     )
                     .font(
                         .headline
+                    )
+                    .foregroundStyle(
+                        .white
                     )
                 }
 
@@ -199,7 +290,11 @@ struct SignViewerView: View {
             }
 
 
+            // MARK: Overlay
+
             VStack {
+
+                // MARK: Trail
 
                 HStack {
 
@@ -213,7 +308,7 @@ struct SignViewerView: View {
                     } label: {
 
                         HStack(
-                            spacing: 6
+                            spacing: 7
                         ) {
 
                             Image(
@@ -239,14 +334,16 @@ struct SignViewerView: View {
                         )
                         .padding(
                             .horizontal,
-                            12
+                            14
                         )
                         .padding(
                             .vertical,
-                            8
+                            9
                         )
                         .background(
-                            .black.opacity(0.4)
+                            .black.opacity(
+                                0.45
+                            )
                         )
                         .clipShape(
                             Capsule()
@@ -256,20 +353,100 @@ struct SignViewerView: View {
                         .plain
                     )
                 }
-                .padding(16)
+                .padding(
+                    .horizontal,
+                    16
+                )
+                .padding(
+                    .top,
+                    16
+                )
 
 
                 Spacer()
 
 
-                Text(
-                    "Drag to rotate · Pinch to zoom"
+                // MARK: Presets
+
+                HStack(
+                    spacing: 6
+                ) {
+
+                    presetButton(
+                        title:
+                            "Front",
+                        preset:
+                            .front
+                    )
+
+
+                    presetButton(
+                        title:
+                            "Side",
+                        preset:
+                            .side
+                    )
+
+
+                    presetButton(
+                        title:
+                            "Top",
+                        preset:
+                            .top
+                    )
+                }
+                .padding(6)
+                .background(
+                    .black.opacity(
+                        0.40
+                    )
                 )
+                .clipShape(
+                    Capsule()
+                )
+                .padding(
+                    .bottom,
+                    10
+                )
+
+
+                // MARK: Hint
+
+                HStack(
+                    spacing: 7
+                ) {
+
+                    Image(
+                        systemName:
+                            "hand.draw"
+                    )
+
+
+                    Text(
+                        "Drag to rotate"
+                    )
+
+
+                    Text("·")
+
+
+                    Image(
+                        systemName:
+                            "arrow.up.left.and.arrow.down.right"
+                    )
+
+
+                    Text(
+                        "Pinch to zoom"
+                    )
+                }
                 .font(
                     .caption
                 )
                 .foregroundStyle(
-                    .white.opacity(0.75)
+                    .white.opacity(
+                        0.78
+                    )
                 )
                 .padding(
                     .horizontal,
@@ -280,7 +457,9 @@ struct SignViewerView: View {
                     10
                 )
                 .background(
-                    .black.opacity(0.35)
+                    .black.opacity(
+                        0.35
+                    )
                 )
                 .clipShape(
                     Capsule()
@@ -386,6 +565,7 @@ struct SignViewerView: View {
                                 isPlaying =
                                     false
 
+
                                 currentFrameIndex =
                                     Int(
                                         $0.rounded()
@@ -403,7 +583,7 @@ struct SignViewerView: View {
                 }
 
 
-                // MARK: Playback
+                // MARK: Playback Controls
 
                 HStack(
                     spacing: 16
@@ -511,7 +691,7 @@ struct SignViewerView: View {
                 Divider()
 
 
-                // MARK: Practice Attempt Status
+                // MARK: Previous Attempt
 
                 if let attempt =
                     practiceAttempt {
@@ -538,7 +718,7 @@ struct SignViewerView: View {
                         ) {
 
                             Text(
-                                "Practice attempt ready"
+                                "Practice attempt completed"
                             )
                             .font(
                                 .system(
@@ -585,6 +765,19 @@ struct SignViewerView: View {
 
                     isPlaying =
                         false
+
+
+                    practiceAttempt =
+                        nil
+
+
+                    pendingPracticeResult =
+                        nil
+
+
+                    practiceResultToShow =
+                        nil
+
 
                     showPractice =
                         true
@@ -658,13 +851,115 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Rotation Gesture
+    // MARK: - Preset Button
+
+    private func presetButton(
+        title: String,
+        preset: ViewPreset
+    ) -> some View {
+
+        Button {
+
+            applyPreset(
+                preset
+            )
+
+        } label: {
+
+            Text(
+                title
+            )
+            .font(
+                .system(
+                    size: 13,
+                    weight: .semibold
+                )
+            )
+            .foregroundStyle(
+                viewPreset == preset
+                ? Color.black
+                : Color.white
+            )
+            .padding(
+                .horizontal,
+                16
+            )
+            .padding(
+                .vertical,
+                8
+            )
+            .background(
+                viewPreset == preset
+                ? Color.white
+                : Color.clear
+            )
+            .clipShape(
+                Capsule()
+            )
+        }
+        .buttonStyle(
+            .plain
+        )
+    }
+
+
+    // MARK: - Apply Preset
+
+    private func applyPreset(
+        _ preset: ViewPreset
+    ) {
+
+        isPlaying =
+            false
+
+
+        viewPreset =
+            preset
+
+
+        switch preset {
+
+        case .front:
+
+            yaw = 0
+
+            pitch = 0
+
+
+        case .side:
+
+            yaw =
+                .pi / 2
+
+            pitch = 0
+
+
+        case .top:
+
+            yaw = 0
+
+            pitch =
+                -.pi / 2
+
+
+        case .custom:
+
+            break
+        }
+    }
+
+
+    // MARK: - Rotation
 
     private var rotationGesture:
         some Gesture {
 
         DragGesture()
             .onChanged { value in
+
+                viewPreset =
+                    .custom
+
 
                 let deltaX =
                     value.translation.width
@@ -677,12 +972,16 @@ struct SignViewerView: View {
 
 
                 yaw +=
-                    Float(deltaX)
+                    Float(
+                        deltaX
+                    )
                     * 0.008
 
 
                 pitch +=
-                    Float(deltaY)
+                    Float(
+                        deltaY
+                    )
                     * 0.008
 
 
@@ -707,7 +1006,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Zoom Gesture
+    // MARK: - Zoom
 
     private var zoomGesture:
         some Gesture {
@@ -754,6 +1053,7 @@ struct SignViewerView: View {
         guard
             !motion.frames.isEmpty
         else {
+
             return
         }
 
@@ -781,8 +1081,7 @@ struct SignViewerView: View {
 
 
     @MainActor
-    private func runPlayback()
-        async {
+    private func runPlayback() async {
 
         guard
             motion.frames.count > 1
@@ -827,12 +1126,16 @@ struct SignViewerView: View {
                 / playbackSpeed
 
 
+            let nanoseconds =
+                UInt64(
+                    adjustedDelay
+                    * 1_000_000
+                )
+
+
             try? await Task.sleep(
                 nanoseconds:
-                    UInt64(
-                        adjustedDelay
-                        * 1_000_000
-                    )
+                    nanoseconds
             )
 
 
@@ -840,6 +1143,7 @@ struct SignViewerView: View {
                 !Task.isCancelled,
                 isPlaying
             else {
+
                 return
             }
 
@@ -858,7 +1162,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Step
+    // MARK: - Frame Controls
 
     private func stepBackward() {
 
@@ -895,14 +1199,14 @@ struct SignViewerView: View {
 
     private func resetView() {
 
-        yaw =
-            0
+        yaw = 0
 
-        pitch =
-            0
+        pitch = 0
 
-        zoom =
-            1
+        zoom = 1
+
+        viewPreset =
+            .front
     }
 
 
@@ -913,6 +1217,7 @@ struct SignViewerView: View {
         guard
             !motion.frames.isEmpty
         else {
+
             return 0
         }
 

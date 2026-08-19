@@ -1,36 +1,47 @@
 import Foundation
 import simd
 
+
+// MARK: - Practice Result
+
 struct PracticeMatchResult: Identifiable {
 
     let id = UUID()
 
     let overallScore: Double
+
     let handShapeScore: Double
+
     let movementScore: Double
+
     let palmOrientationScore: Double
+
     let timingScore: Double
 
     let feedback: String
 }
 
 
+// MARK: - Motion Matcher
+
 enum MotionMatcher {
 
-    // MARK: - Public
+    // MARK: Public
 
     static func compare(
         target: SignMotion,
         user: SignMotion
     ) -> PracticeMatchResult {
 
-        let targetHands = target.frames.compactMap {
-            $0.hands.first
-        }
+        let targetHands =
+            target.frames.compactMap {
+                $0.hands.first
+            }
 
-        let userHands = user.frames.compactMap {
-            $0.hands.first
-        }
+        let userHands =
+            user.frames.compactMap {
+                $0.hands.first
+            }
 
 
         guard
@@ -38,13 +49,9 @@ enum MotionMatcher {
             !userHands.isEmpty
         else {
 
-            return PracticeMatchResult(
-                overallScore: 0,
-                handShapeScore: 0,
-                movementScore: 0,
-                palmOrientationScore: 0,
-                timingScore: 0,
-                feedback: "Not enough hand motion was captured. Try recording again."
+            return emptyResult(
+                feedback:
+                    "Not enough hand motion was captured. Try recording the sign again."
             )
         }
 
@@ -60,6 +67,18 @@ enum MotionMatcher {
             )
 
 
+        guard
+            !targetDescriptors.isEmpty,
+            !userDescriptors.isEmpty
+        else {
+
+            return emptyResult(
+                feedback:
+                    "We couldn't analyze enough landmarks. Try recording again with your hand fully visible."
+            )
+        }
+
+
         let alignment =
             dtwAlignment(
                 target: targetDescriptors,
@@ -69,20 +88,18 @@ enum MotionMatcher {
 
         guard !alignment.isEmpty else {
 
-            return PracticeMatchResult(
-                overallScore: 0,
-                handShapeScore: 0,
-                movementScore: 0,
-                palmOrientationScore: 0,
-                timingScore: 0,
-                feedback: "The motions could not be aligned. Try recording the full sign again."
+            return emptyResult(
+                feedback:
+                    "The two motions could not be aligned. Try performing the complete sign again."
             )
         }
 
 
-        var shapeSimilarities: [Double] = []
-        var movementSimilarities: [Double] = []
-        var palmSimilarities: [Double] = []
+        var shapeScores: [Double] = []
+
+        var movementScores: [Double] = []
+
+        var palmScores: [Double] = []
 
 
         for pair in alignment {
@@ -98,7 +115,7 @@ enum MotionMatcher {
                 ]
 
 
-            shapeSimilarities.append(
+            shapeScores.append(
                 shapeSimilarity(
                     targetFrame.shapeAngles,
                     userFrame.shapeAngles
@@ -106,7 +123,7 @@ enum MotionMatcher {
             )
 
 
-            movementSimilarities.append(
+            movementScores.append(
                 movementSimilarity(
                     targetFrame.trajectory,
                     userFrame.trajectory
@@ -114,7 +131,7 @@ enum MotionMatcher {
             )
 
 
-            palmSimilarities.append(
+            palmScores.append(
                 palmSimilarity(
                     targetFrame.palmNormal,
                     userFrame.palmNormal
@@ -124,21 +141,18 @@ enum MotionMatcher {
 
 
         let handShapeScore =
-            average(
-                shapeSimilarities
-            ) * 100
+            average(shapeScores)
+            * 100
 
 
         let movementScore =
-            average(
-                movementSimilarities
-            ) * 100
+            average(movementScores)
+            * 100
 
 
         let palmScore =
-            average(
-                palmSimilarities
-            ) * 100
+            average(palmScores)
+            * 100
 
 
         let timingScore =
@@ -147,10 +161,16 @@ enum MotionMatcher {
                     target.durationSeconds,
                 userDuration:
                     user.durationSeconds
-            ) * 100
+            )
+            * 100
 
 
-        let overall =
+        // Shape matters most.
+        // Movement is second.
+        // Palm direction is especially important
+        // for spatial sign learning.
+
+        let overallScore =
             handShapeScore * 0.40
             + movementScore * 0.30
             + palmScore * 0.20
@@ -172,19 +192,29 @@ enum MotionMatcher {
 
         return PracticeMatchResult(
             overallScore:
-                clampScore(overall),
+                clampScore(
+                    overallScore
+                ),
 
             handShapeScore:
-                clampScore(handShapeScore),
+                clampScore(
+                    handShapeScore
+                ),
 
             movementScore:
-                clampScore(movementScore),
+                clampScore(
+                    movementScore
+                ),
 
             palmOrientationScore:
-                clampScore(palmScore),
+                clampScore(
+                    palmScore
+                ),
 
             timingScore:
-                clampScore(timingScore),
+                clampScore(
+                    timingScore
+                ),
 
             feedback:
                 feedback
@@ -211,15 +241,20 @@ enum MotionMatcher {
     ) -> [FrameDescriptor] {
 
         guard
-            let firstHand = hands.first,
+            let firstHand =
+                hands.first,
+
             let firstWrist =
-                firstHand.normalizedLandmarks.first
+                firstHand
+                    .normalizedLandmarks
+                    .first
         else {
+
             return []
         }
 
 
-        let palmScales =
+        let scales =
             hands.compactMap {
                 palmScale(
                     from: $0
@@ -227,11 +262,9 @@ enum MotionMatcher {
             }
 
 
-        let averageScale =
+        let averagePalmScale =
             max(
-                average(
-                    palmScales
-                ),
+                average(scales),
                 0.001
             )
 
@@ -239,23 +272,36 @@ enum MotionMatcher {
         return hands.map { hand in
 
             let wrist =
-                hand.normalizedLandmarks.first
+                hand
+                    .normalizedLandmarks
+                    .first
                 ?? firstWrist
 
 
+            let deltaX =
+                Double(
+                    wrist.x
+                    - firstWrist.x
+                )
+
+
+            let deltaY =
+                Double(
+                    wrist.y
+                    - firstWrist.y
+                )
+
+
+            // Position measured approximately
+            // in "hand lengths" rather than pixels.
+
             let trajectory =
                 SIMD2<Double>(
-                    Double(
-                        wrist.x
-                        - firstWrist.x
-                    )
-                    / averageScale,
+                    deltaX
+                    / averagePalmScale,
 
-                    Double(
-                        wrist.y
-                        - firstWrist.y
-                    )
-                    / averageScale
+                    deltaY
+                    / averagePalmScale
                 )
 
 
@@ -286,12 +332,14 @@ enum MotionMatcher {
         guard
             hand.worldLandmarks.count >= 21
         else {
+
             return []
         }
 
 
         let points =
             hand.worldLandmarks.map {
+
                 SIMD3<Float>(
                     $0.x,
                     $0.y,
@@ -299,6 +347,8 @@ enum MotionMatcher {
                 )
             }
 
+
+        // Two bending angles per finger.
 
         let joints: [(Int, Int, Int)] = [
 
@@ -324,12 +374,23 @@ enum MotionMatcher {
         ]
 
 
-        return joints.map {
+        return joints.map { joint in
 
             angle(
-                first: points[$0.0],
-                vertex: points[$0.1],
-                third: points[$0.2]
+                first:
+                    points[
+                        joint.0
+                    ],
+
+                vertex:
+                    points[
+                        joint.1
+                    ],
+
+                third:
+                    points[
+                        joint.2
+                    ]
             )
         }
     }
@@ -363,15 +424,18 @@ enum MotionMatcher {
             lengthA > 0.000001,
             lengthB > 0.000001
         else {
+
             return 0
         }
 
 
         let normalizedA =
-            vectorA / lengthA
+            vectorA
+            / lengthA
 
         let normalizedB =
-            vectorB / lengthB
+            vectorB
+            / lengthB
 
 
         let dot =
@@ -381,18 +445,18 @@ enum MotionMatcher {
             )
 
 
-        let clamped =
+        let clampedDot =
             min(
                 max(
-                    dot,
-                    -1
+                    Double(dot),
+                    -1.0
                 ),
-                1
+                1.0
             )
 
 
         return acos(
-            Double(clamped)
+            clampedDot
         )
     }
 
@@ -406,6 +470,7 @@ enum MotionMatcher {
             !target.isEmpty,
             target.count == user.count
         else {
+
             return 0
         }
 
@@ -422,19 +487,29 @@ enum MotionMatcher {
                 )
 
 
-            differences.append(
+            // 0 rad difference = perfect.
+            // Around 70 degrees difference
+            // is considered strongly different.
+
+            let normalizedDifference =
                 min(
-                    difference / .pi,
+                    difference / 1.22,
                     1
                 )
+
+
+            differences.append(
+                normalizedDifference
             )
         }
 
 
-        return 1
-            - average(
+        return max(
+            0,
+            1 - average(
                 differences
             )
+        )
     }
 
 
@@ -447,6 +522,7 @@ enum MotionMatcher {
         guard
             hand.worldLandmarks.count >= 21
         else {
+
             return nil
         }
 
@@ -456,10 +532,12 @@ enum MotionMatcher {
                 hand.worldLandmarks[0]
             )
 
+
         let indexMCP =
             vector(
                 hand.worldLandmarks[5]
             )
+
 
         let pinkyMCP =
             vector(
@@ -467,17 +545,19 @@ enum MotionMatcher {
             )
 
 
-        let indexVector =
-            indexMCP - wrist
+        let indexDirection =
+            indexMCP
+            - wrist
 
-        let pinkyVector =
-            pinkyMCP - wrist
+        let pinkyDirection =
+            pinkyMCP
+            - wrist
 
 
         let normal =
             simd_cross(
-                indexVector,
-                pinkyVector
+                indexDirection,
+                pinkyDirection
             )
 
 
@@ -488,6 +568,7 @@ enum MotionMatcher {
 
 
         guard length > 0.000001 else {
+
             return nil
         }
 
@@ -505,6 +586,7 @@ enum MotionMatcher {
             let target,
             let user
         else {
+
             return 0.5
         }
 
@@ -516,25 +598,32 @@ enum MotionMatcher {
             )
 
 
-        let clamped =
+        let clampedDot =
             min(
                 max(
-                    dot,
-                    -1
+                    Double(dot),
+                    -1.0
                 ),
-                1
+                1.0
             )
 
 
-        let difference =
+        let angularDifference =
             acos(
-                Double(clamped)
+                clampedDot
             )
 
+
+        // 0 degrees -> 1.0
+        // 90+ degrees -> ~0
 
         return max(
             0,
-            1 - difference / .pi
+            1 - min(
+                angularDifference
+                / (.pi / 2),
+                1
+            )
         )
     }
 
@@ -548,25 +637,31 @@ enum MotionMatcher {
         guard
             hand.normalizedLandmarks.count > 9
         else {
+
             return nil
         }
 
 
         let wrist =
-            hand.normalizedLandmarks[0]
+            hand
+                .normalizedLandmarks[0]
 
         let middleMCP =
-            hand.normalizedLandmarks[9]
+            hand
+                .normalizedLandmarks[9]
 
 
         let dx =
             Double(
-                middleMCP.x - wrist.x
+                middleMCP.x
+                - wrist.x
             )
+
 
         let dy =
             Double(
-                middleMCP.y - wrist.y
+                middleMCP.y
+                - wrist.y
             )
 
 
@@ -582,28 +677,29 @@ enum MotionMatcher {
         _ user: SIMD2<Double>
     ) -> Double {
 
-        let dx =
-            target.x - user.x
+        let deltaX =
+            target.x
+            - user.x
 
-        let dy =
-            target.y - user.y
+        let deltaY =
+            target.y
+            - user.y
 
 
         let distance =
             sqrt(
-                dx * dx
-                + dy * dy
+                deltaX * deltaX
+                + deltaY * deltaY
             )
 
 
-        // Roughly:
-        // 0 hand-width difference = 100%
-        // 2+ hand-width difference = near 0%
+        // About 1.5 hand lengths away
+        // is treated as very different.
 
         return max(
             0,
             1 - min(
-                distance / 2.0,
+                distance / 1.5,
                 1
             )
         )
@@ -621,6 +717,7 @@ enum MotionMatcher {
             targetDuration > 0,
             userDuration > 0
         else {
+
             return 0
         }
 
@@ -637,11 +734,12 @@ enum MotionMatcher {
     }
 
 
-    // MARK: - DTW
+    // MARK: - Dynamic Time Warping
 
     private struct AlignmentPair {
 
         let targetIndex: Int
+
         let userIndex: Int
     }
 
@@ -651,17 +749,18 @@ enum MotionMatcher {
         user: [FrameDescriptor]
     ) -> [AlignmentPair] {
 
-        let n =
+        let targetCount =
             target.count
 
-        let m =
+        let userCount =
             user.count
 
 
         guard
-            n > 0,
-            m > 0
+            targetCount > 0,
+            userCount > 0
         else {
+
             return []
         }
 
@@ -673,118 +772,173 @@ enum MotionMatcher {
                         repeating:
                             Double.infinity,
                         count:
-                            m + 1
+                            userCount + 1
                     ),
                 count:
-                    n + 1
+                    targetCount + 1
             )
 
 
-        cost[0][0] =
-            0
+        cost[0][0] = 0
 
 
-        for i in 1...n {
+        for targetIndex in 1...targetCount {
 
-            for j in 1...m {
+            for userIndex in 1...userCount {
 
                 let localCost =
                     descriptorDistance(
-                        target[i - 1],
-                        user[j - 1]
+                        target[
+                            targetIndex - 1
+                        ],
+                        user[
+                            userIndex - 1
+                        ]
                     )
+
+
+                let diagonal =
+                    cost[
+                        targetIndex - 1
+                    ][
+                        userIndex - 1
+                    ]
+
+
+                let vertical =
+                    cost[
+                        targetIndex - 1
+                    ][
+                        userIndex
+                    ]
+
+
+                let horizontal =
+                    cost[
+                        targetIndex
+                    ][
+                        userIndex - 1
+                    ]
 
 
                 let bestPrevious =
                     min(
-                        cost[i - 1][j],
-                        cost[i][j - 1],
-                        cost[i - 1][j - 1]
+                        diagonal,
+                        min(
+                            vertical,
+                            horizontal
+                        )
                     )
 
 
-                cost[i][j] =
+                cost[
+                    targetIndex
+                ][
+                    userIndex
+                ] =
                     localCost
                     + bestPrevious
             }
         }
 
 
+        // MARK: Recover alignment path
+
         var path: [AlignmentPair] = []
 
-        var i = n
-        var j = m
+
+        var targetIndex =
+            targetCount
+
+        var userIndex =
+            userCount
 
 
         while
-            i > 0,
-            j > 0 {
+            targetIndex > 0,
+            userIndex > 0 {
 
             path.append(
                 AlignmentPair(
                     targetIndex:
-                        i - 1,
+                        targetIndex - 1,
                     userIndex:
-                        j - 1
+                        userIndex - 1
                 )
             )
 
 
             let diagonal =
-                cost[i - 1][j - 1]
+                cost[
+                    targetIndex - 1
+                ][
+                    userIndex - 1
+                ]
 
-            let up =
-                cost[i - 1][j]
 
-            let left =
-                cost[i][j - 1]
+            let vertical =
+                cost[
+                    targetIndex - 1
+                ][
+                    userIndex
+                ]
+
+
+            let horizontal =
+                cost[
+                    targetIndex
+                ][
+                    userIndex - 1
+                ]
 
 
             if
-                diagonal <= up,
-                diagonal <= left {
+                diagonal <= vertical,
+                diagonal <= horizontal {
 
-                i -= 1
-                j -= 1
+                targetIndex -= 1
 
-            } else if up <= left {
+                userIndex -= 1
 
-                i -= 1
+            } else if
+                vertical <= horizontal {
+
+                targetIndex -= 1
 
             } else {
 
-                j -= 1
+                userIndex -= 1
             }
         }
 
 
-        while i > 0 {
+        while targetIndex > 0 {
 
             path.append(
                 AlignmentPair(
                     targetIndex:
-                        i - 1,
+                        targetIndex - 1,
                     userIndex:
                         0
                 )
             )
 
-            i -= 1
+            targetIndex -= 1
         }
 
 
-        while j > 0 {
+        while userIndex > 0 {
 
             path.append(
                 AlignmentPair(
                     targetIndex:
                         0,
                     userIndex:
-                        j - 1
+                        userIndex - 1
                 )
             )
 
-            j -= 1
+            userIndex -= 1
         }
 
 
@@ -805,19 +959,19 @@ enum MotionMatcher {
             )
 
 
-        let palmDistance =
-            1
-            - palmSimilarity(
-                target.palmNormal,
-                user.palmNormal
-            )
-
-
         let movementDistance =
             1
             - movementSimilarity(
                 target.trajectory,
                 user.trajectory
+            )
+
+
+        let palmDistance =
+            1
+            - palmSimilarity(
+                target.palmNormal,
+                user.palmNormal
             )
 
 
@@ -837,28 +991,38 @@ enum MotionMatcher {
         timing: Double
     ) -> String {
 
-        let scores = [
+        let categories: [
             (
-                name: "shape",
-                score: handShape
+                name: String,
+                score: Double
+            )
+        ] = [
+
+            (
+                "shape",
+                handShape
             ),
+
             (
-                name: "movement",
-                score: movement
+                "movement",
+                movement
             ),
+
             (
-                name: "palm",
-                score: palm
+                "palm",
+                palm
             ),
+
             (
-                name: "timing",
-                score: timing
+                "timing",
+                timing
             )
         ]
 
 
-        guard let weakest =
-                scores.min(
+        guard
+            let weakest =
+                categories.min(
                     by: {
                         $0.score
                         < $1.score
@@ -866,13 +1030,15 @@ enum MotionMatcher {
                 )
         else {
 
-            return "Try the sign again and compare your motion with the target."
+            return
+                "Try the sign again and compare your motion with the target."
         }
 
 
-        if weakest.score >= 85 {
+        if weakest.score >= 88 {
 
-            return "Strong motion match. Try it once more to build consistency."
+            return
+                "Your motion is very close to the target. Try it again to build consistency."
         }
 
 
@@ -880,32 +1046,37 @@ enum MotionMatcher {
 
         case "shape":
 
-            return "Your movement is close. Focus on matching the finger shape throughout the sign."
+            return
+                "Focus on your finger shape. Try matching how bent or extended each finger is throughout the sign."
 
 
         case "movement":
 
-            return "Follow the target hand path more closely from the beginning to the end of the sign."
+            return
+                "Follow the target movement path more closely from the beginning to the end of the sign."
 
 
         case "palm":
 
-            return "Your hand shape is close, but the palm is facing a different direction. Rotate your palm to match the target."
+            return
+                "Your hand shape is close, but your palm is facing a different direction. Rotate your palm to better match the target."
 
 
         case "timing":
 
-            return "The motion is similar. Try matching the target pace a little more closely."
+            return
+                "Your motion is similar. Try matching the target's pace more closely."
 
 
         default:
 
-            return "Try the sign again and compare your motion with the target."
+            return
+                "Try the sign again and compare your motion with the target."
         }
     }
 
 
-    // MARK: - Utilities
+    // MARK: - Helpers
 
     private static func vector(
         _ point: LandmarkPoint
@@ -928,13 +1099,14 @@ enum MotionMatcher {
         }
 
 
-        return values.reduce(
-            0,
-            +
-        )
-        / Double(
-            values.count
-        )
+        return
+            values.reduce(
+                0,
+                +
+            )
+            / Double(
+                values.count
+            )
     }
 
 
@@ -948,6 +1120,21 @@ enum MotionMatcher {
                 0
             ),
             100
+        )
+    }
+
+
+    private static func emptyResult(
+        feedback: String
+    ) -> PracticeMatchResult {
+
+        PracticeMatchResult(
+            overallScore: 0,
+            handShapeScore: 0,
+            movementScore: 0,
+            palmOrientationScore: 0,
+            timingScore: 0,
+            feedback: feedback
         )
     }
 }
