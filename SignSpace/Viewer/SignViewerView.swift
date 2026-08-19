@@ -34,9 +34,17 @@ struct SignViewerView: View {
     @State private var zoom:
         Float = 1.0
 
-
     @State private var showTrail =
         true
+
+
+    // MARK: - Practice
+
+    @State private var showPractice =
+        false
+
+    @State private var practiceAttempt:
+        SignMotion?
 
 
     // MARK: - Gesture
@@ -121,6 +129,23 @@ struct SignViewerView: View {
 
             await runPlayback()
         }
+        .fullScreenCover(
+            isPresented:
+                $showPractice
+        ) {
+
+            NavigationStack {
+
+                TryItYourselfView(
+                    targetMotion:
+                        motion
+                ) { attempt in
+
+                    practiceAttempt =
+                        attempt
+                }
+            }
+        }
     }
 
 
@@ -132,9 +157,28 @@ struct SignViewerView: View {
 
             if motion.frames.isEmpty {
 
-                Text(
-                    "No motion frames"
-                )
+                VStack(
+                    spacing: 10
+                ) {
+
+                    Image(
+                        systemName:
+                            "hand.raised.slash"
+                    )
+                    .font(
+                        .system(
+                            size: 40
+                        )
+                    )
+
+
+                    Text(
+                        "No motion frames"
+                    )
+                    .font(
+                        .headline
+                    )
+                }
 
             } else {
 
@@ -202,9 +246,7 @@ struct SignViewerView: View {
                             8
                         )
                         .background(
-                            .black.opacity(
-                                0.4
-                            )
+                            .black.opacity(0.4)
                         )
                         .clipShape(
                             Capsule()
@@ -214,9 +256,7 @@ struct SignViewerView: View {
                         .plain
                     )
                 }
-                .padding(
-                    16
-                )
+                .padding(16)
 
 
                 Spacer()
@@ -229,9 +269,7 @@ struct SignViewerView: View {
                     .caption
                 )
                 .foregroundStyle(
-                    .white.opacity(
-                        0.75
-                    )
+                    .white.opacity(0.75)
                 )
                 .padding(
                     .horizontal,
@@ -242,9 +280,7 @@ struct SignViewerView: View {
                     10
                 )
                 .background(
-                    .black.opacity(
-                        0.35
-                    )
+                    .black.opacity(0.35)
                 )
                 .clipShape(
                     Capsule()
@@ -261,7 +297,7 @@ struct SignViewerView: View {
         )
         .frame(
             height:
-                470
+                430
         )
         .contentShape(
             Rectangle()
@@ -279,30 +315,53 @@ struct SignViewerView: View {
 
     private var controls: some View {
 
-        VStack(
-            spacing: 20
-        ) {
+        ScrollView {
 
-            HStack {
+            VStack(
+                spacing: 18
+            ) {
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
+                // MARK: Motion Info
+
+                HStack {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 4
+                    ) {
+
+                        Text(
+                            "3D Motion"
+                        )
+                        .font(
+                            .headline
+                        )
+
+
+                        Text(
+                            "\(motion.frameCount) frames · \(formattedDuration)"
+                        )
+                        .font(
+                            .subheadline
+                        )
+                        .foregroundStyle(
+                            .secondary
+                        )
+                    }
+
+
+                    Spacer()
+
 
                     Text(
-                        "3D Motion"
+                        "\(safeFrameIndex + 1) / \(max(motion.frameCount, 1))"
                     )
                     .font(
-                        .headline
-                    )
-
-
-                    Text(
-                        "\(motion.frameCount) frames · \(formattedDuration)"
-                    )
-                    .font(
-                        .subheadline
+                        .system(
+                            size: 14,
+                            weight: .semibold,
+                            design: .rounded
+                        )
                     )
                     .foregroundStyle(
                         .secondary
@@ -310,106 +369,265 @@ struct SignViewerView: View {
                 }
 
 
-                Spacer()
+                // MARK: Timeline
 
+                if motion.frames.count > 1 {
 
-                Text(
-                    "\(safeFrameIndex + 1) / \(max(motion.frameCount, 1))"
-                )
-                .font(
-                    .system(
-                        size: 14,
-                        weight: .semibold,
-                        design: .rounded
-                    )
-                )
-                .foregroundStyle(
-                    .secondary
-                )
-            }
+                    Slider(
+                        value: Binding(
+                            get: {
 
-
-            // MARK: Timeline
-
-            if motion.frames.count > 1 {
-
-                Slider(
-                    value: Binding(
-                        get: {
-
-                            Double(
-                                safeFrameIndex
-                            )
-                        },
-                        set: {
-
-                            isPlaying =
-                                false
-
-                            currentFrameIndex =
-                                Int(
-                                    $0.rounded()
+                                Double(
+                                    safeFrameIndex
                                 )
-                        }
-                    ),
-                    in:
-                        0...Double(
-                            motion.frames.count
-                            - 1
+                            },
+                            set: {
+
+                                isPlaying =
+                                    false
+
+                                currentFrameIndex =
+                                    Int(
+                                        $0.rounded()
+                                    )
+                            }
                         ),
-                    step:
-                        1
-                )
-            }
-
-
-            // MARK: Playback
-
-            HStack(
-                spacing: 16
-            ) {
-
-                Button {
-
-                    stepBackward()
-
-                } label: {
-
-                    Image(
-                        systemName:
-                            "backward.frame.fill"
-                    )
-                    .font(
-                        .title3
-                    )
-                    .frame(
-                        width: 44,
-                        height: 44
+                        in:
+                            0...Double(
+                                motion.frames.count
+                                - 1
+                            ),
+                        step:
+                            1
                     )
                 }
 
 
+                // MARK: Playback
+
+                HStack(
+                    spacing: 16
+                ) {
+
+                    Button {
+
+                        stepBackward()
+
+                    } label: {
+
+                        Image(
+                            systemName:
+                                "backward.frame.fill"
+                        )
+                        .font(
+                            .title3
+                        )
+                        .frame(
+                            width: 44,
+                            height: 44
+                        )
+                    }
+
+
+                    Button {
+
+                        togglePlayback()
+
+                    } label: {
+
+                        Image(
+                            systemName:
+                                isPlaying
+                                ? "pause.fill"
+                                : "play.fill"
+                        )
+                        .font(
+                            .title2
+                        )
+                        .foregroundStyle(
+                            .white
+                        )
+                        .frame(
+                            width: 62,
+                            height: 62
+                        )
+                        .background(
+                            Color(
+                                red: 0.95,
+                                green: 0.37,
+                                blue: 0.55
+                            )
+                        )
+                        .clipShape(
+                            Circle()
+                        )
+                    }
+
+
+                    Button {
+
+                        stepForward()
+
+                    } label: {
+
+                        Image(
+                            systemName:
+                                "forward.frame.fill"
+                        )
+                        .font(
+                            .title3
+                        )
+                        .frame(
+                            width: 44,
+                            height: 44
+                        )
+                    }
+
+
+                    Spacer()
+
+
+                    Picker(
+                        "Speed",
+                        selection:
+                            $playbackSpeed
+                    ) {
+
+                        Text("0.5×")
+                            .tag(0.5)
+
+                        Text("1×")
+                            .tag(1.0)
+
+                        Text("2×")
+                            .tag(2.0)
+                    }
+                    .pickerStyle(
+                        .menu
+                    )
+                }
+
+
+                Divider()
+
+
+                // MARK: Practice Attempt Status
+
+                if let attempt =
+                    practiceAttempt {
+
+                    HStack(
+                        spacing: 12
+                    ) {
+
+                        Image(
+                            systemName:
+                                "checkmark.circle.fill"
+                        )
+                        .font(
+                            .title2
+                        )
+                        .foregroundStyle(
+                            .green
+                        )
+
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: 3
+                        ) {
+
+                            Text(
+                                "Practice attempt ready"
+                            )
+                            .font(
+                                .system(
+                                    size: 15,
+                                    weight: .semibold
+                                )
+                            )
+
+
+                            Text(
+                                "\(attempt.frameCount) frames · \(String(format: "%.2fs", attempt.durationSeconds))"
+                            )
+                            .font(
+                                .caption
+                            )
+                            .foregroundStyle(
+                                .secondary
+                            )
+                        }
+
+
+                        Spacer()
+                    }
+                    .padding(14)
+                    .background(
+                        Color(
+                            red: 0.94,
+                            green: 0.98,
+                            blue: 0.94
+                        )
+                    )
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 16,
+                            style: .continuous
+                        )
+                    )
+                }
+
+
+                // MARK: Try It Yourself
+
                 Button {
 
-                    togglePlayback()
+                    isPlaying =
+                        false
+
+                    showPractice =
+                        true
 
                 } label: {
 
-                    Image(
-                        systemName:
-                            isPlaying
-                            ? "pause.fill"
-                            : "play.fill"
-                    )
-                    .font(
-                        .title2
-                    )
+                    HStack(
+                        spacing: 12
+                    ) {
+
+                        Image(
+                            systemName:
+                                "camera.fill"
+                        )
+
+
+                        Text(
+                            practiceAttempt == nil
+                            ? "Try It Yourself"
+                            : "Try Again"
+                        )
+                        .fontWeight(
+                            .semibold
+                        )
+
+
+                        Spacer()
+
+
+                        Image(
+                            systemName:
+                                "chevron.right"
+                        )
+                    }
                     .foregroundStyle(
                         .white
                     )
+                    .padding(
+                        .horizontal,
+                        18
+                    )
                     .frame(
-                        width: 62,
-                        height: 62
+                        height: 56
                     )
                     .background(
                         Color(
@@ -419,64 +637,28 @@ struct SignViewerView: View {
                         )
                     )
                     .clipShape(
-                        Circle()
+                        RoundedRectangle(
+                            cornerRadius: 17,
+                            style: .continuous
+                        )
                     )
                 }
-
-
-                Button {
-
-                    stepForward()
-
-                } label: {
-
-                    Image(
-                        systemName:
-                            "forward.frame.fill"
-                    )
-                    .font(
-                        .title3
-                    )
-                    .frame(
-                        width: 44,
-                        height: 44
-                    )
-                }
-
-
-                Spacer()
-
-
-                Picker(
-                    "Speed",
-                    selection:
-                        $playbackSpeed
-                ) {
-
-                    Text("0.5×")
-                        .tag(0.5)
-
-                    Text("1×")
-                        .tag(1.0)
-
-                    Text("2×")
-                        .tag(2.0)
-                }
-                .pickerStyle(
-                    .menu
+                .buttonStyle(
+                    .plain
+                )
+                .disabled(
+                    motion.frames.isEmpty
                 )
             }
+            .padding(22)
         }
-        .padding(
-            22
-        )
         .background(
             Color.white
         )
     }
 
 
-    // MARK: - Rotation
+    // MARK: - Rotation Gesture
 
     private var rotationGesture:
         some Gesture {
@@ -525,7 +707,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Zoom
+    // MARK: - Zoom Gesture
 
     private var zoomGesture:
         some Gesture {
@@ -539,7 +721,9 @@ struct SignViewerView: View {
 
 
                 zoom *=
-                    Float(change)
+                    Float(
+                        change
+                    )
 
 
                 zoom =
@@ -674,7 +858,7 @@ struct SignViewerView: View {
     }
 
 
-    // MARK: - Stepping
+    // MARK: - Step
 
     private func stepBackward() {
 

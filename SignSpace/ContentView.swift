@@ -381,6 +381,11 @@ struct ContentView: View {
 
                             Button {
 
+                                // Stop the capture session behind
+                                // the 3D viewer.
+
+                                handTracker.stop()
+
                                 motionToView =
                                     recording
 
@@ -500,7 +505,14 @@ struct ContentView: View {
         }
         .sheet(
             item:
-                $motionToView
+                $motionToView,
+            onDismiss: {
+
+                // Restore camera when returning
+                // to the capture screen.
+
+                handTracker.start()
+            }
         ) { motion in
 
             NavigationStack {
