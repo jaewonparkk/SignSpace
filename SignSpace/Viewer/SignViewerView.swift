@@ -150,27 +150,20 @@ struct SignViewerView: View {
                 $showPractice,
             onDismiss: {
 
-                guard
-                    let result =
-                        pendingPracticeResult
+                guard let attempt =
+                        practiceAttempt
                 else {
-
                     return
                 }
 
-
-                pendingPracticeResult =
-                    nil
-
-
-                // Give the full-screen camera
-                // presentation a moment to disappear
-                // before presenting the result sheet.
+                let result =
+                    MotionMatcher.compare(
+                        target: motion,
+                        user: attempt
+                    )
 
                 DispatchQueue.main.asyncAfter(
-                    deadline:
-                        .now()
-                        + 0.2
+                    deadline: .now() + 0.15
                 ) {
 
                     practiceResultToShow =
@@ -182,21 +175,10 @@ struct SignViewerView: View {
             NavigationStack {
 
                 TryItYourselfView(
-                    targetMotion:
-                        motion
+                    targetMotion: motion
                 ) { attempt in
 
-                    practiceAttempt =
-                        attempt
-
-
-                    pendingPracticeResult =
-                        MotionMatcher.compare(
-                            target:
-                                motion,
-                            user:
-                                attempt
-                        )
+                    practiceAttempt = attempt
                 }
             }
         }
