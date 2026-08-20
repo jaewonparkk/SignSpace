@@ -4,31 +4,44 @@ import UIKit
 import Combine
 import MediaPipeTasksVision
 
-final class HandTrackingService: NSObject, ObservableObject {
+
+final class HandTrackingService:
+    NSObject,
+    ObservableObject {
 
     // MARK: - Published UI State
 
-    @Published var handLandmarks: [[CGPoint]] = []
+    @Published var handLandmarks:
+        [[CGPoint]] = []
 
-    @Published var statusText: String =
-        "Starting..."
+    @Published var detectedHandedness:
+        [Handedness] = []
 
-    @Published var errorMessage: String?
+    @Published var statusText:
+        String = "Starting..."
+
+    @Published var errorMessage:
+        String?
 
     @Published private(set)
-    var cameraDevice: AVCaptureDevice?
+    var cameraDevice:
+        AVCaptureDevice?
 
 
     // MARK: - Recording State
 
-    @Published var isRecording: Bool = false
+    @Published var isRecording:
+        Bool = false
 
-    @Published var recordedFrameCount: Int = 0
+    @Published var recordedFrameCount:
+        Int = 0
 
-    @Published var latestRecording: SignMotion?
+    @Published var latestRecording:
+        SignMotion?
 
 
-    private var recordingFrames: [SignFrame] = []
+    private var recordingFrames:
+        [SignFrame] = []
 
     private var recordingStartTimestamp:
         Int?
@@ -36,24 +49,33 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     // MARK: - Camera
 
-    let session = AVCaptureSession()
+    let session =
+        AVCaptureSession()
 
-    private let sessionQueue = DispatchQueue(
-        label: "com.signspace.camera.session"
-    )
 
-    private let videoOutputQueue = DispatchQueue(
-        label: "com.signspace.camera.video"
-    )
+    private let sessionQueue =
+        DispatchQueue(
+            label:
+                "com.signspace.camera.session"
+        )
+
+
+    private let videoOutputQueue =
+        DispatchQueue(
+            label:
+                "com.signspace.camera.video"
+        )
+
 
     private var videoOutput:
         AVCaptureVideoDataOutput?
+
 
     private var isCameraConfigured =
         false
 
 
-    // MARK: - Camera Rotation
+    // MARK: - Rotation
 
     private var captureRotationCoordinator:
         AVCaptureDevice.RotationCoordinator?
@@ -63,6 +85,22 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     private var handLandmarker:
         HandLandmarker?
+
+
+    /*
+     Our MediaPipe input is intentionally
+     NON-MIRRORED.
+
+     The preview itself is mirrored separately
+     inside CameraPreview.swift.
+
+     MediaPipe handedness classification assumes
+     selfie-style mirrored input, so we swap
+     Left <-> Right after classification.
+     */
+
+    private let mediaPipeInputIsMirrored =
+        false
 
 
     // MARK: - Init
@@ -83,9 +121,12 @@ final class HandTrackingService: NSObject, ObservableObject {
 
         guard let modelPath =
                 Bundle.main.path(
-                    forResource: "hand_landmarker",
-                    ofType: "task"
-                ) else {
+                    forResource:
+                        "hand_landmarker",
+                    ofType:
+                        "task"
+                )
+        else {
 
             DispatchQueue.main.async {
 
@@ -103,23 +144,32 @@ final class HandTrackingService: NSObject, ObservableObject {
         let options =
             HandLandmarkerOptions()
 
+
         options.baseOptions.modelAssetPath =
             modelPath
+
 
         options.runningMode =
             .liveStream
 
+
+        // Support two-hand signs.
+
         options.numHands =
             2
+
 
         options.minHandDetectionConfidence =
             0.5
 
+
         options.minHandPresenceConfidence =
             0.5
 
+
         options.minTrackingConfidence =
             0.5
+
 
         options.handLandmarkerLiveStreamDelegate =
             self
@@ -129,8 +179,10 @@ final class HandTrackingService: NSObject, ObservableObject {
 
             handLandmarker =
                 try HandLandmarker(
-                    options: options
+                    options:
+                        options
                 )
+
 
             DispatchQueue.main.async {
 
@@ -156,9 +208,12 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     private func requestCameraPermission() {
 
-        switch AVCaptureDevice.authorizationStatus(
-            for: .video
-        ) {
+        switch
+            AVCaptureDevice
+                .authorizationStatus(
+                    for:
+                        .video
+                ) {
 
         case .authorized:
 
@@ -168,12 +223,14 @@ final class HandTrackingService: NSObject, ObservableObject {
         case .notDetermined:
 
             AVCaptureDevice.requestAccess(
-                for: .video
+                for:
+                    .video
             ) { [weak self] granted in
 
                 guard let self else {
                     return
                 }
+
 
                 if granted {
 
@@ -193,7 +250,8 @@ final class HandTrackingService: NSObject, ObservableObject {
             }
 
 
-        case .denied, .restricted:
+        case .denied,
+             .restricted:
 
             DispatchQueue.main.async {
 
@@ -223,18 +281,24 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     private func configureCamera() {
 
-        sessionQueue.async { [weak self] in
+        sessionQueue.async {
+            [weak self] in
 
             guard let self else {
                 return
             }
 
-            guard !self.isCameraConfigured else {
+
+            guard
+                !self.isCameraConfigured
+            else {
                 return
             }
 
 
-            self.session.beginConfiguration()
+            self.session
+                .beginConfiguration()
+
 
             self.session.sessionPreset =
                 .high
@@ -245,11 +309,16 @@ final class HandTrackingService: NSObject, ObservableObject {
             guard let camera =
                     AVCaptureDevice.default(
                         .builtInWideAngleCamera,
-                        for: .video,
-                        position: .front
-                    ) else {
+                        for:
+                            .video,
+                        position:
+                            .front
+                    )
+            else {
 
-                self.session.commitConfiguration()
+                self.session
+                    .commitConfiguration()
+
 
                 DispatchQueue.main.async {
 
@@ -272,26 +341,36 @@ final class HandTrackingService: NSObject, ObservableObject {
 
 
             self.captureRotationCoordinator =
-                AVCaptureDevice.RotationCoordinator(
-                    device: camera,
-                    previewLayer: nil
-                )
+                AVCaptureDevice
+                    .RotationCoordinator(
+                        device:
+                            camera,
+                        previewLayer:
+                            nil
+                    )
 
 
-            // MARK: Camera Input
+            // MARK: Input
 
             do {
 
                 let input =
                     try AVCaptureDeviceInput(
-                        device: camera
+                        device:
+                            camera
                     )
 
-                guard self.session.canAddInput(
-                    input
-                ) else {
 
-                    self.session.commitConfiguration()
+                guard
+                    self.session
+                        .canAddInput(
+                            input
+                        )
+                else {
+
+                    self.session
+                        .commitConfiguration()
+
 
                     DispatchQueue.main.async {
 
@@ -302,13 +381,16 @@ final class HandTrackingService: NSObject, ObservableObject {
                     return
                 }
 
+
                 self.session.addInput(
                     input
                 )
 
             } catch {
 
-                self.session.commitConfiguration()
+                self.session
+                    .commitConfiguration()
+
 
                 DispatchQueue.main.async {
 
@@ -320,13 +402,15 @@ final class HandTrackingService: NSObject, ObservableObject {
             }
 
 
-            // MARK: Video Output
+            // MARK: Output
 
             let output =
                 AVCaptureVideoDataOutput()
 
+
             output.alwaysDiscardsLateVideoFrames =
                 true
+
 
             output.videoSettings = [
 
@@ -339,15 +423,21 @@ final class HandTrackingService: NSObject, ObservableObject {
 
             output.setSampleBufferDelegate(
                 self,
-                queue: self.videoOutputQueue
+                queue:
+                    self.videoOutputQueue
             )
 
 
-            guard self.session.canAddOutput(
-                output
-            ) else {
+            guard
+                self.session
+                    .canAddOutput(
+                        output
+                    )
+            else {
 
-                self.session.commitConfiguration()
+                self.session
+                    .commitConfiguration()
+
 
                 DispatchQueue.main.async {
 
@@ -363,6 +453,7 @@ final class HandTrackingService: NSObject, ObservableObject {
                 output
             )
 
+
             self.videoOutput =
                 output
 
@@ -370,29 +461,41 @@ final class HandTrackingService: NSObject, ObservableObject {
             // MARK: Capture Rotation
 
             if let connection =
-                    output.connection(
-                        with: .video
-                    ) {
+                output.connection(
+                    with:
+                        .video
+                ) {
 
                 if let coordinator =
-                        self.captureRotationCoordinator {
+                    self.captureRotationCoordinator {
 
                     let angle =
                         coordinator
                             .videoRotationAngleForHorizonLevelCapture
+
 
                     if connection
                         .isVideoRotationAngleSupported(
                             angle
                         ) {
 
-                        connection.videoRotationAngle =
+                        connection
+                            .videoRotationAngle =
                             angle
                     }
                 }
 
 
-                // MediaPipe receives a non-mirrored frame.
+                /*
+                 IMPORTANT
+
+                 The buffer going into MediaPipe
+                 remains NON-MIRRORED.
+
+                 CameraPreview.swift mirrors the
+                 visible selfie preview separately.
+                 */
+
                 if connection
                     .isVideoMirroringSupported {
 
@@ -400,18 +503,24 @@ final class HandTrackingService: NSObject, ObservableObject {
                         .automaticallyAdjustsVideoMirroring =
                         false
 
-                    connection.isVideoMirrored =
+
+                    connection
+                        .isVideoMirrored =
                         false
                 }
             }
 
 
-            self.session.commitConfiguration()
+            self.session
+                .commitConfiguration()
+
 
             self.isCameraConfigured =
                 true
 
-            self.session.startRunning()
+
+            self.session
+                .startRunning()
 
 
             DispatchQueue.main.async {
@@ -427,38 +536,53 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     func start() {
 
-        sessionQueue.async { [weak self] in
+        sessionQueue.async {
+            [weak self] in
 
             guard let self else {
                 return
             }
 
-            guard self.isCameraConfigured else {
+
+            guard
+                self.isCameraConfigured
+            else {
                 return
             }
 
-            guard !self.session.isRunning else {
+
+            guard
+                !self.session.isRunning
+            else {
                 return
             }
 
-            self.session.startRunning()
+
+            self.session
+                .startRunning()
         }
     }
 
 
     func stop() {
 
-        sessionQueue.async { [weak self] in
+        sessionQueue.async {
+            [weak self] in
 
             guard let self else {
                 return
             }
 
-            guard self.session.isRunning else {
+
+            guard
+                self.session.isRunning
+            else {
                 return
             }
 
-            self.session.stopRunning()
+
+            self.session
+                .stopRunning()
         }
     }
 
@@ -467,21 +591,28 @@ final class HandTrackingService: NSObject, ObservableObject {
 
     func startRecording() {
 
-        recordingFrames.removeAll(
-            keepingCapacity: true
-        )
+        recordingFrames
+            .removeAll(
+                keepingCapacity:
+                    true
+            )
+
 
         recordingStartTimestamp =
             nil
 
+
         recordedFrameCount =
             0
+
 
         latestRecording =
             nil
 
+
         isRecording =
             true
+
 
         statusText =
             "Recording..."
@@ -489,10 +620,13 @@ final class HandTrackingService: NSObject, ObservableObject {
 
 
     func stopRecording(
-        name: String = "Untitled Sign"
+        name: String =
+            "Untitled Sign"
     ) {
 
-        guard isRecording else {
+        guard
+            isRecording
+        else {
             return
         }
 
@@ -501,16 +635,21 @@ final class HandTrackingService: NSObject, ObservableObject {
             false
 
 
-        guard !recordingFrames.isEmpty else {
+        guard
+            !recordingFrames.isEmpty
+        else {
 
             latestRecording =
                 nil
 
+
             recordedFrameCount =
                 0
 
+
             statusText =
                 "No hand motion captured"
+
 
             return
         }
@@ -518,19 +657,26 @@ final class HandTrackingService: NSObject, ObservableObject {
 
         let motion =
             SignMotion(
-                name: name,
-                frames: recordingFrames
+                name:
+                    name,
+                frames:
+                    recordingFrames
             )
 
 
         latestRecording =
             motion
 
+
         recordedFrameCount =
             recordingFrames.count
 
+
         recordingStartTimestamp =
             nil
+
+
+        updateNormalStatus()
     }
 
 
@@ -539,10 +685,14 @@ final class HandTrackingService: NSObject, ObservableObject {
         latestRecording =
             nil
 
-        recordingFrames.removeAll()
+
+        recordingFrames
+            .removeAll()
+
 
         recordedFrameCount =
             0
+
 
         recordingStartTimestamp =
             nil
@@ -552,7 +702,8 @@ final class HandTrackingService: NSObject, ObservableObject {
     // MARK: - MediaPipe Processing
 
     private func process(
-        sampleBuffer: CMSampleBuffer
+        sampleBuffer:
+            CMSampleBuffer
     ) {
 
         guard let handLandmarker else {
@@ -564,18 +715,26 @@ final class HandTrackingService: NSObject, ObservableObject {
 
             let image =
                 try MPImage(
-                    sampleBuffer: sampleBuffer,
-                    orientation: .up
+                    sampleBuffer:
+                        sampleBuffer,
+                    orientation:
+                        .up
                 )
 
 
-            // Camera presentation timestamps are monotonic,
-            // which is what MediaPipe live-stream mode needs.
+            /*
+             MediaPipe live-stream timestamps
+             must increase monotonically.
+
+             CMSampleBuffer's presentation time
+             gives us exactly that.
+             */
 
             let presentationTime =
                 CMSampleBufferGetPresentationTimeStamp(
                     sampleBuffer
                 )
+
 
             let seconds =
                 CMTimeGetSeconds(
@@ -583,22 +742,27 @@ final class HandTrackingService: NSObject, ObservableObject {
                 )
 
 
-            guard seconds.isFinite else {
+            guard
+                seconds.isFinite
+            else {
                 return
             }
 
 
             let timestampMilliseconds =
                 Int(
-                    seconds * 1000.0
+                    seconds
+                    * 1000.0
                 )
 
 
-            try handLandmarker.detectAsync(
-                image: image,
-                timestampInMilliseconds:
-                    timestampMilliseconds
-            )
+            try handLandmarker
+                .detectAsync(
+                    image:
+                        image,
+                    timestampInMilliseconds:
+                        timestampMilliseconds
+                )
 
         } catch {
 
@@ -607,6 +771,117 @@ final class HandTrackingService: NSObject, ObservableObject {
                 self.errorMessage =
                     "Detection error: \(error.localizedDescription)"
             }
+        }
+    }
+
+
+    // MARK: - Handedness
+
+    private func normalizedHandedness(
+        rawLabel: String?
+    ) -> Handedness {
+
+        guard
+            let rawLabel
+        else {
+
+            return .unknown
+        }
+
+
+        let rawHand:
+            Handedness
+
+
+        switch rawLabel
+            .lowercased() {
+
+        case "left":
+
+            rawHand =
+                .left
+
+
+        case "right":
+
+            rawHand =
+                .right
+
+
+        default:
+
+            rawHand =
+                .unknown
+        }
+
+
+        guard
+            !mediaPipeInputIsMirrored
+        else {
+
+            return rawHand
+        }
+
+
+        // MediaPipe assumes mirrored/selfie input.
+        // Our inference buffer is not mirrored.
+
+        switch rawHand {
+
+        case .left:
+
+            return .right
+
+
+        case .right:
+
+            return .left
+
+
+        case .unknown:
+
+            return .unknown
+        }
+    }
+
+
+    // MARK: - Status
+
+    private func updateNormalStatus() {
+
+        let hands =
+            detectedHandedness
+
+
+        switch hands.count {
+
+        case 0:
+
+            statusText =
+                "Show your hand"
+
+
+        case 1:
+
+            statusText =
+                "\(hands[0].displayName) hand · 21 landmarks"
+
+
+        default:
+
+            let labels =
+                hands
+                    .map {
+                        $0.displayName
+                    }
+                    .joined(
+                        separator:
+                            " + "
+                    )
+
+
+            statusText =
+                "\(labels) · \(hands.count * 21) landmarks"
         }
     }
 }
@@ -618,13 +893,17 @@ extension HandTrackingService:
     AVCaptureVideoDataOutputSampleBufferDelegate {
 
     func captureOutput(
-        _ output: AVCaptureOutput,
-        didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
+        _ output:
+            AVCaptureOutput,
+        didOutput sampleBuffer:
+            CMSampleBuffer,
+        from connection:
+            AVCaptureConnection
     ) {
 
         process(
-            sampleBuffer: sampleBuffer
+            sampleBuffer:
+                sampleBuffer
         )
     }
 }
@@ -636,11 +915,14 @@ extension HandTrackingService:
     HandLandmarkerLiveStreamDelegate {
 
     func handLandmarker(
-        _ handLandmarker: HandLandmarker,
+        _ handLandmarker:
+            HandLandmarker,
         didFinishDetection result:
             HandLandmarkerResult?,
-        timestampInMilliseconds: Int,
-        error: Error?
+        timestampInMilliseconds:
+            Int,
+        error:
+            Error?
     ) {
 
         // MARK: Error
@@ -666,6 +948,11 @@ extension HandTrackingService:
                 self.handLandmarks =
                     []
 
+
+                self.detectedHandedness =
+                    []
+
+
                 if !self.isRecording {
 
                     self.statusText =
@@ -677,87 +964,235 @@ extension HandTrackingService:
         }
 
 
-        // MARK: 2D Preview Data
+        // MARK: Build Stable Hands
 
-        let detectedHands:
-            [[CGPoint]] =
-            result.landmarks.map { hand in
+        struct DetectedHandBundle {
 
-                hand.map { landmark in
+            let previewPoints:
+                [CGPoint]
 
-                    CGPoint(
-                        x: CGFloat(
-                            landmark.x
-                        ),
-                        y: CGFloat(
-                            landmark.y
-                        )
-                    )
-                }
-            }
+            let handFrame:
+                HandFrame
+
+            let wristX:
+                Float
+        }
 
 
-        // MARK: Recording Data
-        //
-        // Keep normalized camera coordinates AND
-        // MediaPipe world coordinates.
-
-        let capturedHands: [HandFrame] =
-            zip(
-                result.landmarks,
-                result.worldLandmarks
+        let detectedCount =
+            min(
+                result.landmarks.count,
+                result.worldLandmarks.count
             )
-            .map {
-                normalizedHand,
-                worldHand in
 
+
+        var bundles:
+            [DetectedHandBundle] = []
+
+
+        if detectedCount > 0 {
+
+            for index in 0..<detectedCount {
+
+                let normalizedHand =
+                    result.landmarks[
+                        index
+                    ]
+
+
+                let worldHand =
+                    result.worldLandmarks[
+                        index
+                    ]
+
+
+                // MARK: Handedness Classification
+
+                let category =
+                    index <
+                    result.handedness.count
+                    ? result.handedness[
+                        index
+                    ].first
+                    : nil
+
+
+                let handedness =
+                    normalizedHandedness(
+                        rawLabel:
+                            category?
+                                .categoryName
+                    )
+
+
+                let confidence =
+                    category?
+                        .score
+                    ?? 0
+
+
+                // MARK: Preview Points
+
+                let previewPoints =
+                    normalizedHand.map {
+                        landmark in
+
+                        CGPoint(
+                            x:
+                                CGFloat(
+                                    landmark.x
+                                ),
+                            y:
+                                CGFloat(
+                                    landmark.y
+                                )
+                        )
+                    }
+
+
+                // MARK: Normalized Points
 
                 let normalizedPoints =
                     normalizedHand.map {
                         landmark in
 
                         LandmarkPoint(
-                            x: Float(
-                                landmark.x
-                            ),
-                            y: Float(
-                                landmark.y
-                            ),
-                            z: Float(
-                                landmark.z
-                            )
+                            x:
+                                Float(
+                                    landmark.x
+                                ),
+                            y:
+                                Float(
+                                    landmark.y
+                                ),
+                            z:
+                                Float(
+                                    landmark.z
+                                )
                         )
                     }
 
+
+                // MARK: World Points
 
                 let worldPoints =
                     worldHand.map {
                         landmark in
 
                         LandmarkPoint(
-                            x: Float(
-                                landmark.x
-                            ),
-                            y: Float(
-                                landmark.y
-                            ),
-                            z: Float(
-                                landmark.z
-                            )
+                            x:
+                                Float(
+                                    landmark.x
+                                ),
+                            y:
+                                Float(
+                                    landmark.y
+                                ),
+                            z:
+                                Float(
+                                    landmark.z
+                                )
                         )
                     }
 
 
-                return HandFrame(
-                    normalizedLandmarks:
-                        normalizedPoints,
-                    worldLandmarks:
-                        worldPoints
+                let handFrame =
+                    HandFrame(
+                        normalizedLandmarks:
+                            normalizedPoints,
+                        worldLandmarks:
+                            worldPoints,
+                        handedness:
+                            handedness,
+                        handednessConfidence:
+                            confidence
+                    )
+
+
+                let wristX =
+                    normalizedPoints
+                        .first?
+                        .x
+                    ?? 0.5
+
+
+                bundles.append(
+                    DetectedHandBundle(
+                        previewPoints:
+                            previewPoints,
+                        handFrame:
+                            handFrame,
+                        wristX:
+                            wristX
+                    )
                 )
+            }
+        }
+
+
+        /*
+         THE IMPORTANT PART
+
+         Every frame now gets a deterministic order:
+
+         Left
+         Right
+         Unknown
+
+         So MediaPipe changing detection order
+         between frames no longer swaps hands.
+         */
+
+        bundles.sort {
+
+            let leftOrder =
+                $0.handFrame
+                    .handedness
+                    .sortOrder
+
+
+            let rightOrder =
+                $1.handFrame
+                    .handedness
+                    .sortOrder
+
+
+            if leftOrder != rightOrder {
+
+                return
+                    leftOrder
+                    < rightOrder
             }
 
 
-        // MARK: UI + Recording State
+            // Stable fallback for unknown / equal labels.
+
+            return
+                $0.wristX
+                < $1.wristX
+        }
+
+
+        let detectedHands =
+            bundles.map {
+                $0.previewPoints
+            }
+
+
+        let capturedHands =
+            bundles.map {
+                $0.handFrame
+            }
+
+
+        let handednessList =
+            bundles.map {
+                $0.handFrame
+                    .handedness
+            }
+
+
+        // MARK: UI + Recording
 
         DispatchQueue.main.async {
 
@@ -765,9 +1200,13 @@ extension HandTrackingService:
                 detectedHands
 
 
-            if self.isRecording {
+            self.detectedHandedness =
+                handednessList
 
-                // First processed frame becomes t = 0.
+
+            // MARK: Recording
+
+            if self.isRecording {
 
                 if self.recordingStartTimestamp ==
                     nil {
@@ -777,9 +1216,10 @@ extension HandTrackingService:
                 }
 
 
-                guard let startTimestamp =
-                        self.recordingStartTimestamp else {
-
+                guard
+                    let startTimestamp =
+                        self.recordingStartTimestamp
+                else {
                     return
                 }
 
@@ -792,9 +1232,6 @@ extension HandTrackingService:
                     )
 
 
-                // Only save frames that actually
-                // contain at least one hand.
-
                 if !capturedHands.isEmpty {
 
                     let frame =
@@ -806,44 +1243,48 @@ extension HandTrackingService:
                         )
 
 
-                    self.recordingFrames.append(
-                        frame
-                    )
+                    self.recordingFrames
+                        .append(
+                            frame
+                        )
 
 
                     self.recordedFrameCount =
-                        self.recordingFrames.count
+                        self.recordingFrames
+                            .count
                 }
 
 
-                self.statusText =
-                    "Recording · \(self.recordedFrameCount) frames"
+                let names =
+                    handednessList
+                        .map {
+                            $0.displayName
+                        }
+                        .joined(
+                            separator:
+                                " + "
+                        )
+
+
+                if names.isEmpty {
+
+                    self.statusText =
+                        "Recording · \(self.recordedFrameCount) frames"
+
+                } else {
+
+                    self.statusText =
+                        "Recording \(names) · \(self.recordedFrameCount) frames"
+                }
+
 
                 return
             }
 
 
-            // MARK: Normal Tracking Status
+            // MARK: Normal Tracking
 
-            switch detectedHands.count {
-
-            case 0:
-
-                self.statusText =
-                    "Show your hand"
-
-
-            case 1:
-
-                self.statusText =
-                    "1 hand · 21 landmarks"
-
-
-            default:
-
-                self.statusText =
-                    "\(detectedHands.count) hands · \(detectedHands.count * 21) landmarks"
-            }
+            self.updateNormalStatus()
         }
     }
 }
