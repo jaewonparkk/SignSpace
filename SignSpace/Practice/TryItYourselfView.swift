@@ -32,11 +32,7 @@ struct TryItYourselfView: View {
 
         ZStack {
 
-            Color(
-                red: 1.0,
-                green: 0.97,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -167,11 +163,7 @@ struct TryItYourselfView: View {
                     style: .continuous
                 )
                 .fill(
-                    Color(
-                        red: 1.0,
-                        green: 0.88,
-                        blue: 0.91
-                    )
+                    SignSpaceTheme.softBlue
                 )
                 .frame(
                     width: 52,
@@ -630,11 +622,7 @@ struct TryItYourselfView: View {
                     height: 26
                 )
                 .background(
-                    Color(
-                        red: 1.0,
-                        green: 0.86,
-                        blue: 0.90
-                    )
+                    SignSpaceTheme.softBlue
                 )
                 .clipShape(
                     Circle()
@@ -794,11 +782,7 @@ struct TryItYourselfView: View {
                     height: 54
                 )
                 .background(
-                    Color(
-                        red: 0.95,
-                        green: 0.37,
-                        blue: 0.55
-                    )
+                    SignSpaceTheme.primary
                 )
                 .clipShape(
                     RoundedRectangle(

@@ -27,11 +27,7 @@ struct PracticeResultView: View {
 
         ZStack {
 
-            Color(
-                red: 1.0,
-                green: 0.97,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -462,11 +458,7 @@ struct PracticeResultView: View {
             alignment: .leading
         )
         .background(
-            Color(
-                red: 1.0,
-                green: 0.90,
-                blue: 0.93
-            )
+            SignSpaceTheme.softBlue
         )
         .clipShape(
             RoundedRectangle(
@@ -762,11 +754,7 @@ struct PracticeResultView: View {
 
     private var accent: Color {
 
-        Color(
-            red: 0.95,
-            green: 0.37,
-            blue: 0.55
-        )
+        SignSpaceTheme.primary
     }
 
 

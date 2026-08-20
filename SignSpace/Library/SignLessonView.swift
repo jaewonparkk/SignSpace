@@ -32,11 +32,7 @@ struct SignLessonView: View {
 
         ZStack {
 
-            Color(
-                red: 1.0,
-                green: 0.97,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -710,11 +706,7 @@ struct SignLessonView: View {
                 5
             )
             .background(
-                Color(
-                    red: 1.0,
-                    green: 0.89,
-                    blue: 0.93
-                )
+                SignSpaceTheme.softBlue
             )
             .clipShape(
                 Capsule()
@@ -724,10 +716,6 @@ struct SignLessonView: View {
 
     private var accent: Color {
 
-        Color(
-            red: 0.95,
-            green: 0.37,
-            blue: 0.55
-        )
+        SignSpaceTheme.primary
     }
 }

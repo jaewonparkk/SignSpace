@@ -68,17 +68,8 @@ struct SignLibraryView: View {
         LinearGradient(
             colors: [
 
-                Color(
-                    red: 1.0,
-                    green: 0.97,
-                    blue: 0.95
-                ),
-
-                Color(
-                    red: 1.0,
-                    green: 0.94,
-                    blue: 0.95
-                )
+                SignSpaceTheme.background,
+                SignSpaceTheme.backgroundDeep
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -277,11 +268,7 @@ struct SignLibraryView: View {
                     style: .continuous
                 )
                 .fill(
-                    Color(
-                        red: 1.0,
-                        green: 0.87,
-                        blue: 0.91
-                    )
+                    SignSpaceTheme.softBlue
                 )
                 .frame(
                     width: 72,
@@ -415,11 +402,7 @@ struct SignLibraryView: View {
                 4
             )
             .background(
-                Color(
-                    red: 1.0,
-                    green: 0.90,
-                    blue: 0.93
-                )
+                SignSpaceTheme.softBlue
             )
             .clipShape(
                 Capsule()
@@ -537,10 +520,6 @@ struct SignLibraryView: View {
 
     private var accent: Color {
 
-        Color(
-            red: 0.95,
-            green: 0.37,
-            blue: 0.55
-        )
+        SignSpaceTheme.primary
     }
 }

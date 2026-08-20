@@ -1,5 +1,12 @@
 import SwiftUI
 
+enum SignSpaceTheme {
+    static let primary = Color(red: 0.08, green: 0.38, blue: 0.88)
+    static let background = Color(red: 0.96, green: 0.98, blue: 1.0)
+    static let backgroundDeep = Color(red: 0.90, green: 0.95, blue: 1.0)
+    static let softBlue = Color(red: 0.86, green: 0.92, blue: 1.0)
+}
+
 struct AppRootView: View {
 
     @State private var selectedTab =
@@ -42,13 +49,7 @@ struct AppRootView: View {
             }
             .tag(1)
         }
-        .tint(
-            Color(
-                red: 0.95,
-                green: 0.37,
-                blue: 0.55
-            )
-        )
+        .tint(SignSpaceTheme.primary)
     }
 }
 

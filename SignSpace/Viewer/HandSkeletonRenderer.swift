@@ -251,9 +251,9 @@ final class HandSkeletonRenderer {
         let material =
             UnlitMaterial(
                 color: UIColor(
-                    red: 1.0,
-                    green: 0.42,
-                    blue: 0.63,
+                    red: 0.20,
+                    green: 0.58,
+                    blue: 1.0,
                     alpha: 0.85
                 )
             )
@@ -469,9 +469,9 @@ private final class HandSkeletonEntity {
         let material =
             UnlitMaterial(
                 color: UIColor(
-                    red: 1.0,
-                    green: 0.42,
-                    blue: 0.62,
+                    red: 0.16,
+                    green: 0.52,
+                    blue: 1.0,
                     alpha: 1.0
                 )
             )

@@ -75,6 +75,10 @@ final class HandTrackingService:
         false
 
 
+    private var hasStartedPreparing =
+        false
+
+
     // MARK: - Rotation
 
     private var captureRotationCoordinator:
@@ -108,10 +112,6 @@ final class HandTrackingService:
     override init() {
 
         super.init()
-
-        configureHandLandmarker()
-
-        requestCameraPermission()
     }
 
 
@@ -535,6 +535,22 @@ final class HandTrackingService:
     // MARK: - Camera Controls
 
     func start() {
+
+        if !hasStartedPreparing {
+
+            hasStartedPreparing =
+                true
+
+
+            // Defer camera and model work until a camera screen is actually
+            // shown. Model construction stays on the processing queue.
+            videoOutputQueue.async { [weak self] in
+                self?.configureHandLandmarker()
+            }
+
+
+            requestCameraPermission()
+        }
 
         sessionQueue.async {
             [weak self] in

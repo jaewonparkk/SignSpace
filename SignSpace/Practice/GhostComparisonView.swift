@@ -67,11 +67,7 @@ struct GhostComparisonView: View {
 
         ZStack {
 
-            Color(
-                red: 0.98,
-                green: 0.96,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -173,11 +169,7 @@ struct GhostComparisonView: View {
                         title:
                             "Target",
                         color:
-                            Color(
-                                red: 1.0,
-                                green: 0.34,
-                                blue: 0.58
-                            )
+                            SignSpaceTheme.primary
                     )
 
 
@@ -419,11 +411,7 @@ struct GhostComparisonView: View {
                         height: 62
                     )
                     .background(
-                        Color(
-                            red: 0.95,
-                            green: 0.37,
-                            blue: 0.55
-                        )
+                        SignSpaceTheme.primary
                     )
                     .clipShape(
                         Circle()

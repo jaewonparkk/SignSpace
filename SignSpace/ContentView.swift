@@ -13,11 +13,7 @@ struct ContentView: View {
 
         ZStack {
 
-            Color(
-                red: 1.0,
-                green: 0.97,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -426,11 +422,7 @@ struct ContentView: View {
                                     height: 54
                                 )
                                 .background(
-                                    Color(
-                                        red: 0.95,
-                                        green: 0.37,
-                                        blue: 0.55
-                                    )
+                                    SignSpaceTheme.primary
                                 )
                                 .clipShape(
                                     RoundedRectangle(

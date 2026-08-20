@@ -9,15 +9,15 @@ final class ComparisonHandRenderer {
 
     private let targetSkeleton = ComparisonSkeletonEntity(
         jointColor: UIColor(
-            red: 1.0,
-            green: 0.34,
-            blue: 0.58,
+            red: 0.16,
+            green: 0.52,
+            blue: 1.0,
             alpha: 1.0
         ),
         boneColor: UIColor(
-            red: 1.0,
-            green: 0.72,
-            blue: 0.80,
+            red: 0.52,
+            green: 0.75,
+            blue: 1.0,
             alpha: 1.0
         )
     )

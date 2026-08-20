@@ -75,11 +75,7 @@ struct SignViewerView: View {
 
         ZStack {
 
-            Color(
-                red: 0.98,
-                green: 0.96,
-                blue: 0.95
-            )
+            SignSpaceTheme.background
             .ignoresSafeArea()
 
 
@@ -614,11 +610,7 @@ struct SignViewerView: View {
                             height: 62
                         )
                         .background(
-                            Color(
-                                red: 0.95,
-                                green: 0.37,
-                                blue: 0.55
-                            )
+                            SignSpaceTheme.primary
                         )
                         .clipShape(
                             Circle()
@@ -805,11 +797,7 @@ struct SignViewerView: View {
                         height: 56
                     )
                     .background(
-                        Color(
-                            red: 0.95,
-                            green: 0.37,
-                            blue: 0.55
-                        )
+                        SignSpaceTheme.primary
                     )
                     .clipShape(
                         RoundedRectangle(
