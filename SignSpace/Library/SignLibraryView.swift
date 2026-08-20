@@ -322,21 +322,11 @@ struct SignLibraryView: View {
                             .tertiary
                         )
 
-
                     Text(
-                        sign.handDescription
+                        "Saved"
                     )
 
-
-                    Text("·")
-                        .foregroundStyle(
-                            .tertiary
-                        )
-
-
-                    Text(
-                        sign.durationText
-                    )
+                    Text(sign.createdAt, style: .date)
                 }
                 .font(
                     .caption
