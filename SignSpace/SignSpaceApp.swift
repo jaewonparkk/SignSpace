@@ -1,11 +1,18 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct SignSpaceApp: App {
 
     var body: some Scene {
+
         WindowGroup {
-            ContentView()
+
+            AppRootView()
         }
+        .modelContainer(
+            for:
+                SavedSign.self
+        )
     }
 }
